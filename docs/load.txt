@@ -1,0 +1,10 @@
+0) StrongTypedCfg 
+cfg section
+cfg element
+1) построить объекты 
+ наследоваться от {cfg section}
+ load
+ 
+ 
+ 
+ 
