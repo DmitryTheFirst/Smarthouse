@@ -1,9 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web.Services.Description;
 using System.Xml;
 
 namespace Smarthouse
@@ -14,61 +15,109 @@ namespace Smarthouse
         {
             Console.WriteLine("Hello world!");
 
-
-
-            /*var type = Type.GetType("Smarthouse.Program, Smarthouse, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null");
-            if (type == null)
-                throw new TypeLoadException("Can't load specified parser type");
-            var ifaceType = typeof(ISmarthousable);
-            if (type.GetInterface(ifaceType.Name, false) != null)
-            {
-                lst.Add((ISmarthousable)Activator.CreateInstance(type));
-                //------------------------
-            }
-            foreach ( var VARIABLE in lst )
-            {
-                VARIABLE.Init();
-            }
-
-
-            //cfg get cfg
-
-            */
-
+            Smarthouse sh=new Smarthouse(  );
             Console.ReadKey();
         }
     }
 
-    class AccountManager:Module
+    class pluginsSection : ConfigurationSection
     {
-        private Dictionary<string, user> users;
-
-        public AccountManager()
+        [ConfigurationProperty("pluginInfos", IsDefaultCollection = false)]
+        [ConfigurationCollection(typeof(PluginCollection),
+            AddItemName = "add",
+            ClearItemsName = "clear",
+            RemoveItemName = "remove")]
+        public PluginCollection Services
         {
-            users = new Dictionary<string, user>();
+            get
+            {
+                return (PluginCollection)base["pluginInfos"];
+            }
+        }
+    }
+
+    internal class PluginCollection : ConfigurationElementCollection
+    {
+        public PluginCollection()
+        {
+            Console.WriteLine("ServiceCollection Constructor");
         }
 
-        class user
+        public PluginConfig this[int index]
         {
-            private string name;
-            private string hashpass;
-            private DateTime date;
-            private string last_login_module;
+            get { return (PluginConfig)BaseGet(index); }
+            set
+            {
+                if (BaseGet(index) != null)
+                {
+                    BaseRemoveAt(index);
+                }
+                BaseAdd(index, value);
+            }
         }
 
-        public override bool Init()
+        public void Add(PluginConfig pluginConfig)
         {
-            throw new NotImplementedException();
+            BaseAdd(pluginConfig);
         }
 
-        public override bool Die()
+        public void Clear()
         {
-            throw new NotImplementedException();
+            BaseClear();
         }
 
-        public override bool ExecString()
+        protected override ConfigurationElement CreateNewElement()
         {
-            throw new NotImplementedException();
+            return new PluginConfig();
+        }
+
+        protected override object GetElementKey(ConfigurationElement element)
+        {
+            return ((PluginConfig)element);
+        }
+
+        public void Remove(PluginConfig pluginConfig)
+        {
+            BaseRemove(pluginConfig);
+        }
+
+        public void RemoveAt(int index)
+        {
+            BaseRemoveAt(index);
+        }
+
+        public void Remove(string name)
+        {
+            BaseRemove(name);
+        }
+    }
+
+    internal class PluginConfig : ConfigurationElement
+    {
+        [ConfigurationProperty("className", IsRequired = true)]
+        public string ClassName
+        {
+            get
+            {
+                return (string)base["className"];
+            }
+            set
+            {
+                base["className"] = value;
+            }
+        }
+
+        [ConfigurationProperty("moduleCfgPath", IsRequired = true)]
+        public string ConfigPath
+        {
+            get
+            {
+                return (string)base["moduleCfgPath"];
+            }
+            set
+            {
+                base["moduleCfgPath"] = value;
+            }
         }
     }
 }

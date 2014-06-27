@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
 
@@ -14,12 +15,25 @@ namespace Smarthouse
         private string loginMessage = "Welcome, motherfucker! Who the fuck are you?";
         private byte tryesToLogin = 3;
 
-        public override bool Init()
+        public Dictionary<string, HashSet<string>> description { get; set; }
+        public string StrongName { get; set; }
+
+        public bool Init()
         {
             bool success = true;
             //creating thread
 
             return success;
+        }
+
+        public bool Die()
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool ExecString()
+        {
+            throw new NotImplementedException();
         }
 
         private void Work()
@@ -32,19 +46,11 @@ namespace Smarthouse
             } while ( true );//i can't use normal flags because there will be thread blocker(console.readline). So i'll just kill thread  
         }
 
-        public override bool Die()
-        {
-            throw new NotImplementedException();
-        }
-
-        public override bool ExecString()
-        {
-            throw new NotImplementedException();
-        }
+        
 
         public bool Login()
         {
-            
+            throw new NotImplementedException();
         }
 
         public int ReadInt(string message, string errorMessage, ConsoleColor messageColor)

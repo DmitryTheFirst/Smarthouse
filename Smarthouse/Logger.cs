@@ -1,20 +1,24 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Smarthouse
 {
     class Logger : Module
     {
-        public override bool Init()
+        public Dictionary<string, HashSet<string>> description { get; set; }
+        public string StrongName { get; set; }
+
+        public bool Init()
         {
             throw new NotImplementedException();
         }
 
-        public override bool Die()
+        public bool Die()
         {
             throw new NotImplementedException();
         }
 
-        public override bool ExecString()
+        public bool ExecString()
         {
             throw new NotImplementedException();
         }

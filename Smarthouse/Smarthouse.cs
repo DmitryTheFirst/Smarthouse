@@ -3,9 +3,9 @@
     class Smarthouse
     {
         private ModuleManager moduleManager;
-        public Smarthouse(string pathToCfgDir)
+        public Smarthouse()
         {
-            this.moduleManager=new ModuleManager( "pathtocfg" );
+            this.moduleManager=new ModuleManager();
 
         }
 
