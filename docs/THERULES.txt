@@ -1,0 +1,2 @@
+All modules must be inherited from ISmarthousable exept Smarthouse and ModuleManager.
+You can find all modules using ModuleManager

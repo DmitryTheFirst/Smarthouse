@@ -8,14 +8,15 @@ using System.Xml;
 
 namespace Smarthouse
 {
-    class Program : ISmarthousable
+    class Program
     {
         static void Main(string[] args)
         {
             Console.WriteLine("Hello world!");
-            
-            List<ISmarthousable> lst = new List<ISmarthousable>();
-            var type = Type.GetType("Smarthouse.Program, Smarthouse, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null");
+
+
+
+            /*var type = Type.GetType("Smarthouse.Program, Smarthouse, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null");
             if (type == null)
                 throw new TypeLoadException("Can't load specified parser type");
             var ifaceType = typeof(ISmarthousable);
@@ -32,20 +33,42 @@ namespace Smarthouse
 
             //cfg get cfg
 
+            */
 
             Console.ReadKey();
         }
-
-        public bool Init()
-        {
-            Console.WriteLine( "1" );
-            return true;
-        }
     }
 
-
-    interface ISmarthousable
+    class AccountManager:Module
     {
-        bool Init();
+        private Dictionary<string, user> users;
+
+        public AccountManager()
+        {
+            users = new Dictionary<string, user>();
+        }
+
+        class user
+        {
+            private string name;
+            private string hashpass;
+            private DateTime date;
+            private string last_login_module;
+        }
+
+        public override bool Init()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override bool Die()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override bool ExecString()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

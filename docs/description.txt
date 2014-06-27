@@ -1,0 +1,1 @@
+Description is a dictionary where key is class name(reflection) for what i need it and value - some string to identify from callig class
