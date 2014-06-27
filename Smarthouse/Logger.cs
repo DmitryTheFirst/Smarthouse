@@ -13,6 +13,11 @@ namespace Smarthouse
             throw new NotImplementedException();
         }
 
+        public void Start()
+        {
+            throw new NotImplementedException();
+        }
+
         public bool Die()
         {
             throw new NotImplementedException();

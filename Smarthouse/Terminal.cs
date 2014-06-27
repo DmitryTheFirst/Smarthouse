@@ -26,6 +26,11 @@ namespace Smarthouse
             return success;
         }
 
+        public void Start()
+        {
+            throw new NotImplementedException();
+        }
+
         public bool Die()
         {
             throw new NotImplementedException();

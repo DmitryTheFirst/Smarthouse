@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.IO;
 
 namespace Smarthouse
 {
@@ -14,14 +15,22 @@ namespace Smarthouse
             this.modules = new Dictionary<string, Module>();
             //create optimize dictionaries
             var plugins = (pluginsSection)ConfigurationManager.GetSection("plugins");
-            for (int i = 0; i < plugins.Services.Count; i++)
-                this.LoadModule(plugins.Services[i].ClassName, plugins.Services[i].ConfigPath);
+            for ( int i = 0; i < plugins.Services.Count; i++ )
+            {
+                if ( !this.LoadModule( plugins.Services[ i ].ClassName, plugins.Services[ i ].ConfigPath ) )
+                {
+                    Console.WriteLine("Error! Couldn't load: " + plugins.Services[i].ClassName + ".  Cfg path: " + plugins.Services[i].ConfigPath);
+                }
+            }
+                
 
 
         }
 
         public bool LoadModule(string strongName, string cfgPath)
         {
+            if ( !File.Exists( cfgPath ) )//checking cfg existance
+                return false;
             Type type;
             try
             {
@@ -32,21 +41,15 @@ namespace Smarthouse
                 return false;   //errors in strongName
             }
 
-            if ( type == null )
+            if (type == null)
                 return false;   //can't load
 
-            var ifaceType = typeof(Module);
-            if (type.GetInterface(ifaceType.Name, false) != null)
-            {
+            if (type.GetInterface(typeof(Module).Name, false) != null)
                 modules.Add(strongName, (Module)Activator.CreateInstance(type));
-            }
 
+            //todo load cfg (cfgPath -> modules[strongName])
 
-
-            //cfg get cfg
-
-
-            return false;
+            return true;
         }
 
         public bool UnloadModule(string strongName, string cfgPath)
