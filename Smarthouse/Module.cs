@@ -5,7 +5,7 @@ namespace Smarthouse
     interface Module
     {
         //Description.key is class name(reflection) for what i need it and value - some string to identify from callig class
-        Dictionary<string, HashSet<string>> description { get; set; }
+        Dictionary<string, string> description { get; set; }
         string StrongName { get; set; }//"Smarthouse.Program, Smarthouse, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
         bool Init();//Initializing. 
         void Start();//From now it can work. If it's a daemon - starting thread

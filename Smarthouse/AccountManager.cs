@@ -47,16 +47,12 @@ namespace Smarthouse
         {
             return this.sha1.ComputeHash(GetBytes(password));
         }
-
         static byte[] GetBytes(string str)
         {
             byte[] bytes = new byte[str.Length * sizeof(char)];
             System.Buffer.BlockCopy(str.ToCharArray(), 0, bytes, 0, bytes.Length);
             return bytes;
         }
-
-
-        
 
         class User
         {
@@ -86,7 +82,7 @@ namespace Smarthouse
 
         }
 
-        public Dictionary<string, HashSet<string>> description { get; set; }
+        public Dictionary<string, string> description { get; set; }
         public string StrongName { get; set; }
         public bool Init()
         {

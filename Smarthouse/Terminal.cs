@@ -15,7 +15,7 @@ namespace Smarthouse
         private string loginMessage = "Welcome, motherfucker! Who the fuck are you?";
         private byte tryesToLogin = 3;
 
-        public Dictionary<string, HashSet<string>> description { get; set; }
+        public Dictionary<string, string> description { get; set; }
         public string StrongName { get; set; }
 
         public bool Init()

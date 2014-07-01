@@ -9,7 +9,6 @@ namespace Smarthouse
     {
         //key - strong-name(Smarthouse.Program, Smarthouse, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null), value - module
         Dictionary<string, Module> modules;
-
         public ModuleManager()
         {
             this.modules = new Dictionary<string, Module>();
@@ -26,7 +25,6 @@ namespace Smarthouse
 
 
         }
-
         public bool LoadModule(string strongName, string cfgPath)
         {
             if ( !File.Exists( cfgPath ) )//checking cfg existance
@@ -51,12 +49,10 @@ namespace Smarthouse
 
             return true;
         }
-
         public bool UnloadModule(string strongName, string cfgPath)
         {
             return this.modules[strongName].Die();
         }
-
         public bool UnloadAllModules()
         {
             bool success = true;
@@ -67,6 +63,5 @@ namespace Smarthouse
             }
             return success;
         }
-
     }
 }
