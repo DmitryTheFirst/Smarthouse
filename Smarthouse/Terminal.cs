@@ -6,7 +6,7 @@ using System.Threading;
 namespace Smarthouse
 {
 
-    class Terminal : Module
+    class Terminal : IModule
     {
         /*Terminal can be not one. They all connected through the local network. Not implemented yet*/
 
@@ -15,8 +15,9 @@ namespace Smarthouse
         private string loginMessage = "Welcome, motherfucker! Who the fuck are you?";
         private byte tryesToLogin = 3;
 
-        public Dictionary<string, string> description { get; set; }
+        public Dictionary<string, string> Description { get; set; }
         public string StrongName { get; set; }
+        public string CfgPath { get; set; }
 
         public bool Init()
         {

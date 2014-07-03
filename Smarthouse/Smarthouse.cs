@@ -6,7 +6,6 @@
         public Smarthouse()
         {
             this.moduleManager=new ModuleManager();
-
         }
 
     }

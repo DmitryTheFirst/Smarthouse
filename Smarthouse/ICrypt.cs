@@ -1,0 +1,7 @@
+﻿namespace Smarthouse
+{
+    interface ICrypt
+    {
+         
+    }
+}

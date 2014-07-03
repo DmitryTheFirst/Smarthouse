@@ -46,15 +46,19 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AccountManager.cs" />
+    <Compile Include="Crypt.cs" />
+    <Compile Include="ICrypt.cs" />
+    <Compile Include="INetwork.cs" />
     <Compile Include="Module.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="ModuleManager.cs" />
-    <Compile Include="Network.cs" />
-    <Compile Include="pluginsSection.cs" />
+    <Compile Include="TcpNetwork.cs" />
+    <Compile Include="PluginsSection.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Smarthouse.cs" />
     <Compile Include="Terminal.cs" />
+    <Compile Include="Test.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

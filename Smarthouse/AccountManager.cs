@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 
 namespace Smarthouse
 {
-    class AccountManager : Module
+    class AccountManager : IModule
     {
         private Dictionary<string, User> users;
         private byte maxLoginFailes = 3;
@@ -82,8 +82,10 @@ namespace Smarthouse
 
         }
 
-        public Dictionary<string, string> description { get; set; }
+        public Dictionary<string, string> Description { get; set; }
         public string StrongName { get; set; }
+        public string CfgPath { get; set; }
+
         public bool Init()
         {
             throw new NotImplementedException();

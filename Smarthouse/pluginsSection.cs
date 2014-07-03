@@ -3,7 +3,7 @@ using System.Configuration;
 
 namespace Smarthouse
 {
-    class pluginsSection : ConfigurationSection
+    class PluginsSection : ConfigurationSection
     {
         [ConfigurationProperty("pluginInfos", IsDefaultCollection = false)]
         [ConfigurationCollection(typeof(PluginCollection),
@@ -21,8 +21,6 @@ namespace Smarthouse
 
     internal class PluginCollection : ConfigurationElementCollection
     {
-       
-
         public PluginConfig this[int index]
         {
             get { return (PluginConfig)BaseGet(index); }
@@ -97,6 +95,23 @@ namespace Smarthouse
             set
             {
                 base["moduleCfgPath"] = value;
+            }
+        }
+
+        [ConfigurationProperty("description", IsDefaultCollection = false)]
+        [ConfigurationCollection(typeof(PluginCollection),
+            AddItemName = "add",
+            ClearItemsName = "clear",
+            RemoveItemName = "remove")]
+
+
+        public NameValueConfigurationCollection Description
+        {
+           
+            get
+            {
+               
+                return (NameValueConfigurationCollection)base["description"];
             }
         }
     }

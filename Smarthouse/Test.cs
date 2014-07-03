@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Smarthouse
 {
-    class Logger : IModule
+    class Test : IModule
     {
         public Dictionary<string, string> Description { get; set; }
         public string StrongName { get; set; }
@@ -11,7 +14,7 @@ namespace Smarthouse
 
         public bool Init()
         {
-            throw new NotImplementedException();
+            return false;
         }
 
         public void Start()
