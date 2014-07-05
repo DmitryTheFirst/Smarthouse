@@ -14,8 +14,8 @@ namespace Smarthouse
         static void Main(string[] args)
         {
             Console.WriteLine("Hello world!");
-
-            Smarthouse sh=new Smarthouse(  );
+            Smarthouse.StartSmarthouse();
+           
             Console.ReadKey();
         }
     }

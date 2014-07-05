@@ -61,7 +61,12 @@
     <Compile Include="Test.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="AccountManager.cfg" />
     <None Include="App.config" />
+    <None Include="Network1.cfg" />
+    <None Include="Network2.cfg" />
+    <None Include="Terminal.cfg" />
+    <None Include="Test.cfg" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -27,7 +27,7 @@ namespace Smarthouse
             return success;
         }
 
-        public void Start()
+        public bool Start()
         {
             throw new NotImplementedException();
         }

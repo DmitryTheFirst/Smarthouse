@@ -10,7 +10,8 @@ namespace Smarthouse
     {
         //key - strong-name(Smarthouse.Program, Smarthouse, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null), value - module
         List<IModule> modules;
-        public ModuleManager()
+
+        public bool LoadAllModules()
         {
             this.modules = new List<IModule>();
             //todo create optimize dictionaries
@@ -27,19 +28,34 @@ namespace Smarthouse
                 }
             }
             #endregion
+            modules.Reverse();
             #region Init all modules
-            foreach (var module in modules)
+            for (int i = modules.Count - 1; i >= 0; i--)
             {
+                var module = modules[i];
                 if (!module.Init()) //init module with it's cfg(already in module)
                 {
-                    Console.WriteLine("Error loading " + module.Description["name"] + " module");
+                    Console.WriteLine("Error initing " + module.Description["name"] + " module");
                     module.Die();
-                    modules.Remove(module);
+                    modules.RemoveAt(i);
                 }
             }
             #endregion
-        }
+            #region Start all modules
+            for (int i = modules.Count - 1; i >= 0; i--)
+            {
+                var module = modules[i];
+                if (!module.Start()) //init module with it's cfg(already in module)
+                {
+                    Console.WriteLine("Error starting " + module.Description["name"] + " module");
+                    module.Die();
+                    modules.RemoveAt(i);
+                }
+            }
+            #endregion
 
+            return plugins.Services.Count == modules.Count;
+        }
         public bool LoadModule(string strongName, string cfgPath, Dictionary<string, string> description)
         {
             if (!File.Exists(cfgPath))//checking cfg existance
@@ -85,6 +101,11 @@ namespace Smarthouse
                     success = false;
             }
             return success;
+        }
+
+        public IModule FindModule(string key, string value)
+        {
+            return modules.First(a => a.Description.ContainsKey(key) && a.Description[key] == value);
         }
     }
 }
