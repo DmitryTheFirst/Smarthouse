@@ -69,7 +69,7 @@ namespace Smarthouse
             {
                 type = Type.GetType(strongName);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return false;   //errors in strongName
             }
@@ -105,7 +105,7 @@ namespace Smarthouse
 
         public IModule FindModule(string key, string value)
         {
-            return modules.First(a => a.Description.ContainsKey(key) && a.Description[key] == value);
+            return modules.FirstOrDefault(a => a.Description.ContainsKey(key) && a.Description[key] == value);
         }
     }
 }

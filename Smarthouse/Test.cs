@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Smarthouse
@@ -25,7 +26,8 @@ namespace Smarthouse
             var NetworkAdditional2 = (INetwork)Smarthouse.moduleManager.FindModule("name", "NetworkAdditional2");
             NetworkMain.ConnectTo(new IPEndPoint(IPAddress.Parse("192.168.0.3"), 112));
             NetworkMain.ConnectTo(new IPEndPoint(IPAddress.Parse("192.168.0.3"), 113));
-            NetworkMain.ConnectTo(new IPEndPoint(IPAddress.Parse("192.168.0.3"), 112));
+            NetworkAdditional1.ConnectTo(new IPEndPoint(IPAddress.Parse("192.168.0.3"), 111));
+            Thread.Sleep(1000);
             return true;
         }
 

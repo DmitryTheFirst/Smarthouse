@@ -11,6 +11,5 @@ namespace Smarthouse
         bool Init();//Initializing from cfg 
         bool Start();//From now it can work. If it's a daemon - starting thread
         bool Die();// Dispose all & kill all threads. Save state.
-        bool ExecString();
     }
 }
