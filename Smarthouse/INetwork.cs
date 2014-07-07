@@ -6,6 +6,6 @@ namespace Smarthouse
     interface INetwork
     {
         bool ConnectTo(EndPoint partnerUri);
-        bool SendTo(string partnerUri);
+        bool SendTo(string partnerUri, byte[] data);
     }
 }

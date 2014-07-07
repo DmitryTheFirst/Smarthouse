@@ -21,12 +21,18 @@ namespace Smarthouse
 
         public bool Start()
         {
+            string myIp = "192.168.0.2";
             var NetworkMain = (INetwork)Smarthouse.moduleManager.FindModule("name", "NetworkMain");
             var NetworkAdditional1 = (INetwork)Smarthouse.moduleManager.FindModule("name", "NetworkAdditional1");
             var NetworkAdditional2 = (INetwork)Smarthouse.moduleManager.FindModule("name", "NetworkAdditional2");
-            NetworkMain.ConnectTo(new IPEndPoint(IPAddress.Parse("192.168.0.3"), 112));
-            NetworkMain.ConnectTo(new IPEndPoint(IPAddress.Parse("192.168.0.3"), 113));
-            NetworkAdditional1.ConnectTo(new IPEndPoint(IPAddress.Parse("192.168.0.3"), 111));
+
+            Thread t1 = new Thread(() => NetworkMain.ConnectTo(new IPEndPoint(IPAddress.Parse(myIp), 112)));
+            Thread t2 = new Thread(() => NetworkAdditional1.ConnectTo(new IPEndPoint(IPAddress.Parse(myIp), 113)));
+            Thread t3 = new Thread(() => NetworkAdditional2.ConnectTo(new IPEndPoint(IPAddress.Parse(myIp), 111)));
+
+            t1.Start();
+            t2.Start();
+            t3.Start();
             Thread.Sleep(1000);
             return true;
         }
