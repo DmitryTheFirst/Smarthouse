@@ -5,7 +5,7 @@ namespace Smarthouse
 {
     interface INetwork
     {
-        bool ConnectTo(EndPoint partnerUri);
+        bool ConnectTo(EndPoint partnerUri, Crypt crypt);
         bool SendTo(string partnerUri, byte[] data);
     }
 }

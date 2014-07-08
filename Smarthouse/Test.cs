@@ -26,14 +26,28 @@ namespace Smarthouse
             var NetworkAdditional1 = (INetwork)Smarthouse.moduleManager.FindModule("name", "NetworkAdditional1");
             var NetworkAdditional2 = (INetwork)Smarthouse.moduleManager.FindModule("name", "NetworkAdditional2");
 
-            Thread t1 = new Thread(() => NetworkMain.ConnectTo(new IPEndPoint(IPAddress.Parse(myIp), 112)));
-            Thread t2 = new Thread(() => NetworkAdditional1.ConnectTo(new IPEndPoint(IPAddress.Parse(myIp), 113)));
-            Thread t3 = new Thread(() => NetworkAdditional2.ConnectTo(new IPEndPoint(IPAddress.Parse(myIp), 111)));
+            //Thread t1 = new Thread(() => NetworkMain.ConnectTo(new IPEndPoint(IPAddress.Parse(myIp), 112), null));
+            //Thread t2 = new Thread(() => NetworkAdditional1.ConnectTo(new IPEndPoint(IPAddress.Parse(myIp), 113), null));
+            //Thread t3 = new Thread(() => NetworkAdditional2.ConnectTo(new IPEndPoint(IPAddress.Parse(myIp), 111), null));
 
-            t1.Start();
-            t2.Start();
-            t3.Start();
-            Thread.Sleep(1000);
+            //t1.Start();
+            //t2.Start();
+            //t3.Start();
+
+            NetworkMain.ConnectTo(new IPEndPoint(IPAddress.Parse(myIp), 112), null);
+            //NetworkAdditional1.ConnectTo(new IPEndPoint(IPAddress.Parse(myIp), 113), null);
+            // NetworkAdditional2.ConnectTo(new IPEndPoint(IPAddress.Parse(myIp), 111), null);
+            byte[] big = new byte[1024 * 1024];
+
+            do
+            {
+                Console.WriteLine(NetworkMain.SendTo("networkAdd1", big).ToString());
+                //Console.WriteLine(NetworkMain.SendTo("networkAdd2", big).ToString());
+                //Console.WriteLine(NetworkAdditional1.SendTo("networkMain", big).ToString());
+                //Console.WriteLine(NetworkAdditional2.SendTo("networkAdd1", big).ToString());
+                Thread.Sleep(100);
+            } while (true);
+
             return true;
         }
 

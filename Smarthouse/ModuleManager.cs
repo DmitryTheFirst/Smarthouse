@@ -107,5 +107,10 @@ namespace Smarthouse
         {
             return modules.FirstOrDefault(a => a.Description.ContainsKey(key) && a.Description[key] == value);
         }
+
+        public bool ContainsModule(string moduleName)
+        {
+            return modules.Any(a => a.Description["name"] == moduleName);
+        }
     }
 }
