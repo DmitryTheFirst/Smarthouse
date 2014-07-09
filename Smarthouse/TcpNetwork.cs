@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Dynamic;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
@@ -76,38 +78,44 @@ namespace Smarthouse
                 return false; //refused connection
             }
             string cryptName;
-            if (crypt == null)
-                cryptName = "";
-            else
-                cryptName = crypt.Description["name"];
-            AuthClient(_tcpClient.Client, localID, cryptName);
+            cryptName = crypt == null ? "" : crypt.Description["name"];
+            AuthClient(_tcpClient.GetStream(), localID, cryptName);
             string cryptModuleName;
-            AuthServer(_tcpClient.Client, out cryptModuleName);
-
+            AuthServer(_tcpClient.GetStream(), out cryptModuleName);
             return cryptModuleName == cryptName;
         }
         private void Listener()
         {
             do
             {
-                Socket _newPartner = listener.AcceptSocket(); //somebody wants to connect
+                TcpClient _newPartner = listener.AcceptTcpClient(); //somebody wants to connect
                 Thread auth = new Thread(
                     () =>
                     {
                         string cryptModuleName;
-                        if (!AuthServer(_newPartner, out cryptModuleName))
+                        NetworkStream partnerStream = _newPartner.GetStream();
+                        if (!AuthServer(partnerStream, out cryptModuleName))
                             return;
-                        AuthClient(_newPartner, localID, cryptModuleName);
+                        AuthClient(partnerStream, localID, cryptModuleName);
+                        byte[] readBuff = new byte[sizeof(int)];
+                        partnerStream.BeginRead(readBuff, 0, sizeof(int), onSizeRecieve, partnerStream); //starting recieving data
                     });
                 auth.Start();
             } while (true);
         }
-        public bool AuthServer(Socket newPartner, out string cryptModuleName)
+
+        class StateObject
+        {
+            private byte[] buff = new byte[sizeof(int)];
+            private NetworkStream partnerStream { get; set; }
+        }
+
+        public bool AuthServer(NetworkStream newPartner, out string cryptModuleName)
         {
             byte[] lengths = new byte[2]; //length of first 
-            newPartner.Receive(lengths, lengths.Length, SocketFlags.None);
+            newPartner.Read(lengths, 0, lengths.Length);
             byte[] data = new byte[lengths[0] + lengths[1]]; //data
-            newPartner.Receive(data, data.Length, SocketFlags.None);
+            newPartner.Read(data, 0, data.Length);
             byte[] remoteIdArr = new byte[lengths[0]];
             byte[] cryptModuleArr = new byte[lengths[1]];
             Array.Copy(data, remoteIdArr, remoteIdArr.Length);
@@ -117,58 +125,25 @@ namespace Smarthouse
             cryptModuleName = cryptModule;//returning recieved module name.
             if (cryptModule != string.Empty && !Smarthouse.moduleManager.ContainsModule(cryptModule))  //if string.Empty it means that no crypt used
                 return false;
-            connections.Add(remoteId, new TcpPartner(newPartner, "anonymous", cryptModule));//adding new connection
-            #region NEW CODE. ACHTUNG!
-            //SocketAsyncEventArgs saea = new SocketAsyncEventArgs();
-            //saea.Completed += Recieve;
-            //newPartner.ReceiveAsync(saea);
-            #endregion
-            #region OLD CODE. ACHTUNG!
-            //StateObject so = new StateObject();
-            //so.workSocket = newPartner;
-            //newPartner.BeginReceive(so.buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, EndRecieve, so);
-            #endregion
+            connections.Add(remoteId, new TcpPartner(newPartner, anonymous, cryptModule));//adding new connection
+            //
             Console.WriteLine("Connection from " + remoteId + "//" + Description["name"]);
             return true;
         }
-        public void AuthClient(Socket newPartner, string localId, string cryptModule)
+        public void AuthClient(NetworkStream newPartner, string localId, string cryptModule)
         {
             byte[] remoteIdArr = Encoding.UTF8.GetBytes(localId);
             byte[] cryptoModuleArr = Encoding.UTF8.GetBytes(cryptModule);
             byte[] data = new byte[remoteIdArr.Length + cryptoModuleArr.Length];
             byte[] lengths = new byte[2]; //length of first 
-            lengths[0] = (byte)remoteIdArr.Length;
-            lengths[1] = (byte)cryptoModuleArr.Length;
+            lengths[0] = (byte)remoteIdArr.Length;//remoteId must be less than 255 bytes
+            lengths[1] = (byte)cryptoModuleArr.Length;//cryptoModule must be less than 255 bytes
             remoteIdArr.CopyTo(data, 0);
             cryptoModuleArr.CopyTo(data, remoteIdArr.Length);
 
-            newPartner.Send(lengths);
-            newPartner.Send(data);
+            newPartner.Write(lengths, 0, lengths.Length);//sending length
+            newPartner.Write(remoteIdArr, 0, remoteIdArr.Length);//sending data
         }
-        #region OLD CODE. ACHTUNG!
-        //class StateObject
-        //{
-        //    public Socket workSocket = null;
-        //    public const int BUFFER_SIZE = 1024 * 1024;
-        //    public byte[] buffer = new byte[BUFFER_SIZE];
-        //}
-        //void EndRecieve(System.IAsyncResult ar)
-        //{
-        //    StateObject so = (StateObject)ar.AsyncState;
-        //    Console.WriteLine("Recieved: " + so.buffer.Length);
-        //    so.workSocket.BeginReceive(so.buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, EndRecieve, so); //вылетает ошибка при обрывании коннекта
-        //}
-        #region NEW CODE. ACHTUNG!
-        //public void Recieve(object sender, SocketAsyncEventArgs socketAsyncEventArgs)
-        //{
-
-        //}
-        #endregion
-
-        #endregion
-
-
-
 
         private void Sender()
         {
@@ -179,18 +154,28 @@ namespace Smarthouse
                     var toSend = outputBuffer[i];
                     if (toSend == null)//sometimes occures. Was detected on 1 mb datas every millisecond
                         break;
+                    byte[] sizeArr = BitConverter.GetBytes(toSend.data.Length);//4 bytes for int
                     var start = DateTime.Now; //todo debug
-                    SocketAsyncEventArgs e = new SocketAsyncEventArgs(); //creating data to send
-                    e.SetBuffer(toSend.data, 0, toSend.data.Length);
-                    if (connections[toSend.partner].Partner.SendAsync(e))
-                        outputBuffer.RemoveAt(i);
+                    var partnerStream = connections[toSend.partner].TcpStream;
+                    partnerStream.BeginWrite(sizeArr, 0, sizeArr.Length, null, null);
+                    partnerStream.BeginWrite(toSend.data, 0, toSend.data.Length, null, null);
+                    outputBuffer.RemoveAt(i);
                     Console.WriteLine("Time: " + (DateTime.Now - start).Milliseconds + ". To send: " + outputBuffer.Count); //todo debug
                 }
             } while (true);
         }
+
+        private void onSizeRecieve(IAsyncResult ar)
+        {
+            NetworkStream partnerStream = (NetworkStream)ar.AsyncState;
+            byte[] size = new byte[4];
+
+            partnerStream.BeginRead(new byte[sizeof(int)], 0, sizeof(int), onSizeRecieve, null);//continuing  recieving data
+        }
+
         public bool SendTo(string partnerId, byte[] data)
         {
-            if (!connections.ContainsKey(partnerId) || !connections[partnerId].Partner.Connected)
+            if (!connections.ContainsKey(partnerId))
                 return false;//no such connection or it's not availiable
             outputBuffer.Add(new ToSend(partnerId, data));
             return true;
@@ -217,15 +202,15 @@ namespace Smarthouse
 
     internal class TcpPartner
     {
-        public TcpPartner(Socket partner, string username, string CryptName)
+        public TcpPartner(NetworkStream partnerStream, string username, string CryptName)
         {
-            Partner = partner;
+            TcpStream = partnerStream;
             Username = username;
             if (!String.IsNullOrWhiteSpace(CryptName))
                 Crypt = (Crypt)Smarthouse.moduleManager.FindModule("name", CryptName);
         }
 
-        public Socket Partner { get; set; }
+        public NetworkStream TcpStream { get; set; }
         private string Username { get; set; }
         private Crypt Crypt { get; set; }
     }
