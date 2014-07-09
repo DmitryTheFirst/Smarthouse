@@ -16,7 +16,6 @@ namespace Smarthouse
             this.modules = new List<IModule>();
             //todo create optimize dictionaries
             var plugins = (PluginsSection)ConfigurationManager.GetSection("plugins");
-
             #region Load all modules
             for (int i = 0; i < plugins.Services.Count; i++)
             {
@@ -41,6 +40,9 @@ namespace Smarthouse
                 }
             }
             #endregion
+            //here we find&create create stubs
+
+
             #region Start all modules
             for (int i = modules.Count - 1; i >= 0; i--)
             {
