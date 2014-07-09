@@ -37,7 +37,7 @@ namespace Smarthouse
             NetworkMain.ConnectTo(new IPEndPoint(IPAddress.Parse(myIp), 112), null);
             //NetworkAdditional1.ConnectTo(new IPEndPoint(IPAddress.Parse(myIp), 113), null);
             // NetworkAdditional2.ConnectTo(new IPEndPoint(IPAddress.Parse(myIp), 111), null);
-            byte[] big = new byte[313337];
+            byte[] big = new byte[1024*1024];
 
             do
             {

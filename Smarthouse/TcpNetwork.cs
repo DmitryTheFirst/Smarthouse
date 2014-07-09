@@ -1,27 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Dynamic;
+using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Reflection;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Xml.Linq;
+using Timer = System.Timers.Timer;
 
 namespace Smarthouse
 {
     internal class TcpNetwork : IModule, INetwork
     {
         private Dictionary<string, TcpPartner> connections; // string - partner's ID
-        private TcpListener listener;
-        private List<ToSend> outputBuffer;
-        private int port;
-        private string localID;
-        private Thread listenerThread;
+        private TcpListener listener;                       // server listener
+        private List<ToSend> outputBuffer;                  // output buffer
+        private int port;                                   // listened port
+        private string localID;                             // current node id
+        private Thread listenerThread;                      
         private Thread senderThread;
         private const string notIdentified = "not identified";
         private const string anonymous = "anonymous";
+        private Timer sendTimer = new Timer(100);
+        private object bufferLock = new object();
+        private CancellationTokenSource listenerToken;
 
         #region IModule vars
         public Dictionary<string, string> Description { get; set; }
@@ -33,8 +37,10 @@ namespace Smarthouse
         {
             connections = new Dictionary<string, TcpPartner>();
             outputBuffer = new List<ToSend>();
-            listenerThread = new Thread(Listener);
+            //listenerThread = new Thread(Listener);
+            //Task.Run( Listener,  )
             senderThread = new Thread(Sender);
+            sendTimer.Elapsed += sendData;
         }
         public bool Init()
         {
@@ -51,15 +57,52 @@ namespace Smarthouse
                 return false; //strange config
             }
             #endregion
-
+            listenerToken = new CancellationTokenSource();
             listener = new TcpListener(IPAddress.Any, port); //get port from cfg
+            Listener();
+            sendTimer.Start();
             return true;
         }
+
+        private async void sendData(object sender, System.Timers.ElapsedEventArgs e) {
+            ToSend[] sendData;
+            lock ( bufferLock ) {
+                sendData = outputBuffer.ToArray();
+                outputBuffer.Clear();
+            }
+            var sendTasks = sendData.GroupBy( a => a.partner ).Select(
+                a => {
+                    var _a = a.Select( b=>b.data ).ToArray();
+                    return SendToClient( _a, a.Key );
+                } ).ToArray();
+            await Task.WhenAll( sendTasks );
+        }
+
+        private async Task SendToClient( IEnumerable<byte[]> toSends, string key ) {
+            try {
+                var sendStream = connections[ key ].TcpStream;
+                foreach ( var t in toSends ) {
+                    var bs = BitConverter.GetBytes( t.Length );
+                    await sendStream.WriteAsync( bs, 0, bs.Length );
+                    await sendStream.WriteAsync( t, 0, t.Length );
+                }
+                await sendStream.FlushAsync();
+            }
+            catch ( Exception ex ) {
+                ErrorHandler( ex );
+            }
+        }
+
+        private void ErrorHandler( Exception exception ) {
+            //throw new NotImplementedException();
+        }
+
         public bool Start()
         {
             listener.Start();
             listenerThread.Start();
-            senderThread.Start();
+            //senderThread.Start();
+            sendTimer.Start();
             return true;
         }
 
@@ -77,40 +120,70 @@ namespace Smarthouse
                 _tcpClient.Close();
                 return false; //refused connection
             }
-            string cryptName;
-            cryptName = crypt == null ? "" : crypt.Description["name"];
-            AuthClient(_tcpClient.GetStream(), localID, cryptName);
+            string cryptName = crypt == null ? "" : crypt.Description["name"];
             string cryptModuleName;
-            AuthServer(_tcpClient.GetStream(), out cryptModuleName);
+            var stream = PrepareStream( _tcpClient );
+
+            AuthClient(stream, localID, cryptName);
+            string remoteId;
+            AuthServer(stream, out cryptModuleName, out remoteId);
+            
             return cryptModuleName == cryptName;
         }
-        private void Listener()
-        {
-            do
-            {
-                TcpClient _newPartner = listener.AcceptTcpClient(); //somebody wants to connect
-                Thread auth = new Thread(
-                    () =>
-                    {
-                        string cryptModuleName;
-                        NetworkStream partnerStream = _newPartner.GetStream();
-                        if (!AuthServer(partnerStream, out cryptModuleName))
-                            return;
-                        AuthClient(partnerStream, localID, cryptModuleName);
-                        byte[] readBuff = new byte[sizeof(int)];
-                        partnerStream.BeginRead(readBuff, 0, sizeof(int), onSizeRecieve, partnerStream); //starting recieving data
-                    });
-                auth.Start();
-            } while (true);
+        private async Task Listener() {
+            var token = listenerToken.Token;
+            while ( !token.IsCancellationRequested ) {
+                var client = await listener.AcceptTcpClientAsync();
+                ProcessNewConnection( client, token );
+            }
+        }
+
+        private async void ProcessNewConnection( TcpClient client, CancellationToken token ) {
+            using ( client )
+            using ( var stream = PrepareStream( client ) ) {
+                string remoteId = null;
+                try {
+                    string cryptModuleName;
+                    if ( !AuthServer( stream, out cryptModuleName, out remoteId ) ) return;
+                    AuthClient( stream, localID, cryptModuleName );
+                    await ProcessClient( stream, remoteId, token );
+                }
+                finally {
+                    if ( remoteId != null ) connections.Remove( remoteId );
+                }
+            }
+        }
+
+        private async Task ProcessClient( Stream stream, string remoteId, CancellationToken token ) {
+            while ( !token.IsCancellationRequested ) {
+                using ( var hs = new BinaryReader(stream) ) {
+                    var length = hs.ReadInt32();
+                    if ( length < 0 ) continue;
+                    var buf = new byte[length];
+                    int cnt = 0;
+                    do {
+                        cnt += await stream.ReadAsync( buf, cnt, length-cnt, token );
+                    } while ( cnt<length && !token.IsCancellationRequested );
+                    await ProcessData( buf, remoteId, stream );
+                }
+            }
+        }
+
+        private Task ProcessData( byte[] buf, string remoteId, Stream stream ) {
+            throw new NotImplementedException();
+        }
+
+        private Stream PrepareStream( TcpClient client ) {
+            return new BufferedStream( client.GetStream(), 65536 );
         }
 
         class StateObject
         {
             private byte[] buff = new byte[sizeof(int)];
-            private NetworkStream partnerStream { get; set; }
+            private Stream partnerStream { get; set; }
         }
 
-        public bool AuthServer(NetworkStream newPartner, out string cryptModuleName)
+        public bool AuthServer(Stream newPartner, out string cryptModuleName, out string remoteId)
         {
             byte[] lengths = new byte[2]; //length of first 
             newPartner.Read(lengths, 0, lengths.Length);
@@ -120,7 +193,7 @@ namespace Smarthouse
             byte[] cryptModuleArr = new byte[lengths[1]];
             Array.Copy(data, remoteIdArr, remoteIdArr.Length);
             Array.Copy(data, cryptModuleArr, cryptModuleArr.Length);
-            string remoteId = Encoding.UTF8.GetString(remoteIdArr);
+            remoteId = Encoding.UTF8.GetString(remoteIdArr);
             string cryptModule = Encoding.UTF8.GetString(cryptModuleArr);
             cryptModuleName = cryptModule;//returning recieved module name.
             if (cryptModule != string.Empty && !Smarthouse.moduleManager.ContainsModule(cryptModule))  //if string.Empty it means that no crypt used
@@ -130,19 +203,17 @@ namespace Smarthouse
             Console.WriteLine("Connection from " + remoteId + "//" + Description["name"]);
             return true;
         }
-        public void AuthClient(NetworkStream newPartner, string localId, string cryptModule)
-        {
+        public void AuthClient(Stream newPartner, string localId, string cryptModule) {
             byte[] remoteIdArr = Encoding.UTF8.GetBytes(localId);
             byte[] cryptoModuleArr = Encoding.UTF8.GetBytes(cryptModule);
-            byte[] data = new byte[remoteIdArr.Length + cryptoModuleArr.Length];
-            byte[] lengths = new byte[2]; //length of first 
-            lengths[0] = (byte)remoteIdArr.Length;//remoteId must be less than 255 bytes
-            lengths[1] = (byte)cryptoModuleArr.Length;//cryptoModule must be less than 255 bytes
-            remoteIdArr.CopyTo(data, 0);
-            cryptoModuleArr.CopyTo(data, remoteIdArr.Length);
+            byte[] lengths = new byte[2]; //length of first
 
+            lengths[0] = checked ((byte)remoteIdArr.Length);//remoteId must be less than 255 bytes
+            lengths[1] = checked ((byte)cryptoModuleArr.Length);//cryptoModule must be less than 255 bytes
+            
             newPartner.Write(lengths, 0, lengths.Length);//sending length
             newPartner.Write(remoteIdArr, 0, remoteIdArr.Length);//sending data
+            newPartner.Write(cryptoModuleArr, 0, cryptoModuleArr.Length);//sending data
         }
 
         private void Sender()
@@ -165,25 +236,20 @@ namespace Smarthouse
             } while (true);
         }
 
-        private void onSizeRecieve(IAsyncResult ar)
-        {
-            NetworkStream partnerStream = (NetworkStream)ar.AsyncState;
-            byte[] size = new byte[4];
-
-            partnerStream.BeginRead(new byte[sizeof(int)], 0, sizeof(int), onSizeRecieve, null);//continuing  recieving data
-        }
-
+        
         public bool SendTo(string partnerId, byte[] data)
         {
-            if (!connections.ContainsKey(partnerId))
-                return false;//no such connection or it's not availiable
-            outputBuffer.Add(new ToSend(partnerId, data));
+            if (!connections.ContainsKey(partnerId)) return false;//no such connection or it's not availiable
+            lock ( bufferLock ) {
+                outputBuffer.Add(new ToSend(partnerId, data));
+            }
             return true;
         }
 
         public bool Die()
         {
-            listenerThread.Abort();
+            listenerToken.Cancel();
+            sendTimer.Stop();
             return true;
         }
     }
@@ -202,7 +268,7 @@ namespace Smarthouse
 
     internal class TcpPartner
     {
-        public TcpPartner(NetworkStream partnerStream, string username, string CryptName)
+        public TcpPartner(Stream partnerStream, string username, string CryptName)
         {
             TcpStream = partnerStream;
             Username = username;
@@ -210,7 +276,7 @@ namespace Smarthouse
                 Crypt = (Crypt)Smarthouse.moduleManager.FindModule("name", CryptName);
         }
 
-        public NetworkStream TcpStream { get; set; }
+        public Stream TcpStream { get; set; }
         private string Username { get; set; }
         private Crypt Crypt { get; set; }
     }
