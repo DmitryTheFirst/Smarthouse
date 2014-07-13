@@ -17,7 +17,6 @@ namespace Smarthouse
         private byte tryesToLogin = 3;
 
         public Dictionary<string, string> Description { get; set; }
-        public string StrongName { get; set; }
         public XmlNode Cfg { get; set; }
 
         public bool Init()

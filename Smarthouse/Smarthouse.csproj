@@ -58,7 +58,6 @@
     <Compile Include="Crypt.cs" />
     <Compile Include="Hardware.cs" />
     <Compile Include="ICrypt.cs" />
-    <Compile Include="INetwork.cs" />
     <Compile Include="IModule.cs" />
     <Compile Include="ModuleManager.cs" />
     <Compile Include="TcpNetwork.cs" />

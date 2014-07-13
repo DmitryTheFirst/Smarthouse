@@ -30,7 +30,6 @@ namespace Smarthouse
 
         #region IModule vars
         public Dictionary<string, string> Description { get; set; }
-        public string StrongName { get; set; }
         public XmlNode Cfg { get; set; }
         #endregion
 

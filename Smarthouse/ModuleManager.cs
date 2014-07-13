@@ -95,7 +95,6 @@ namespace Smarthouse
                 return false;  //not implementing Module interface
 
             modules.Add((IModule)Activator.CreateInstance(type));//adding module to list. Here works standart constructor in module
-            modules[modules.Count - 1].StrongName = strongName;
             modules[modules.Count - 1].Cfg = cfg;
             modules[modules.Count - 1].Description = description;
             return true;

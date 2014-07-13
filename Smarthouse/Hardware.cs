@@ -9,7 +9,6 @@ namespace Smarthouse
     class Hardware : IModule
     {
         public Dictionary<string, string> Description { get; set; }
-        public string StrongName { get; set; }
         public XmlNode Cfg { get; set; }
         public bool Init()
         {
