@@ -13,7 +13,7 @@ using Timer = System.Timers.Timer;
 
 namespace Smarthouse
 {
-    internal class TcpNetwork : IModule, INetwork
+    internal class TcpNetwork : IModule
     {
         private Dictionary<string, TcpPartner> connections; // string - partner's ID
         private TcpListener listener;                       // server listener
@@ -109,11 +109,11 @@ namespace Smarthouse
             return true;
         }
 
-        public bool ConnectTo(EndPoint partnerUri, Crypt crypt)
+        public bool ConnectTo(EndPoint partnerUri, Crypt crypt, out string partnerId)
         {
+            partnerId = null;
             Thread.Sleep(new Random().Next(0, 10));//todo fix!!!!! Was a problem because 2 network devices started same time and first one had no time to add new connection
             TcpClient _tcpClient = new TcpClient(); //new IPEndPoint(localIP, port) - binding TcpClient to local ip/port
-
             try
             {
                 _tcpClient.Connect((IPEndPoint)partnerUri);
@@ -121,16 +121,14 @@ namespace Smarthouse
             catch (SocketException)
             {
                 _tcpClient.Close();
+
                 return false; //refused connection
             }
             string cryptName = crypt == null ? "" : crypt.Description["name"];
             string cryptModuleName;
             var stream = PrepareStream(_tcpClient);
-
             AuthClient(stream, localID, cryptName);
-            string remoteId;
-            AuthServer(stream, out cryptModuleName, out remoteId);
-
+            AuthServer(stream, out cryptModuleName, out partnerId);
             return cryptModuleName == cryptName;
         }
         private async Task Listener()

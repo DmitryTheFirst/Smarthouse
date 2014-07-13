@@ -21,14 +21,14 @@ namespace Smarthouse
             return true;
         }
 
-        private INetwork NetworkMain;
-        private INetwork NetworkAdditional1;
-        private INetwork NetworkAdditional2;
+        private TcpNetwork NetworkMain;
+        private TcpNetwork NetworkAdditional1;
+        private TcpNetwork NetworkAdditional2;
         public bool Start()
         {
-            NetworkMain = (INetwork)Smarthouse.moduleManager.FindModule("name", "NetworkMain");
-            NetworkAdditional1 = (INetwork)Smarthouse.moduleManager.FindModule("name", "NetworkAdditional1");
-            NetworkAdditional2 = (INetwork)Smarthouse.moduleManager.FindModule("name", "NetworkAdditional2");
+            NetworkMain = (TcpNetwork)Smarthouse.moduleManager.FindModule("name", "NetworkMain");
+            NetworkAdditional1 = (TcpNetwork)Smarthouse.moduleManager.FindModule("name", "NetworkAdditional1");
+            NetworkAdditional2 = (TcpNetwork)Smarthouse.moduleManager.FindModule("name", "NetworkAdditional2");
 
             Thread t1 = new Thread(Thread1);
             Thread t2 = new Thread(Thread2);
@@ -42,34 +42,43 @@ namespace Smarthouse
         string myIp = "192.168.0.100";
         private void Thread1()
         {
-            NetworkMain.ConnectTo(new IPEndPoint(IPAddress.Parse(myIp), 112), null);
-            for (int i = 1; i <= 1000; i++)
+            string partnerId;
+            if (NetworkMain.ConnectTo(new IPEndPoint(IPAddress.Parse(myIp), 112), null, out partnerId))
             {
-                NetworkMain.SendTo("NetworkAdditional1", new byte[i]);
-                NetworkMain.SendTo("NetworkAdditional2", new byte[i]);
-                Thread.Sleep(timeout);
+                for (int i = 1; i <= 1000; i++)
+                {
+                    ///Console.WriteLine(NetworkMain.SendTo(partnerId, new byte[i]));
+                    Console.WriteLine(NetworkMain.SendTo("NetworkAdditional2", new byte[i]));
+                    Thread.Sleep(timeout);
+                }
             }
         }
 
         private void Thread2()
         {
-            NetworkAdditional1.ConnectTo(new IPEndPoint(IPAddress.Parse(myIp), 113), null);
-            for (int i = 1; i <= 1000; i++)
+            string partnerId;
+            if (NetworkAdditional1.ConnectTo(new IPEndPoint(IPAddress.Parse(myIp), 113), null, out partnerId))
             {
-                NetworkAdditional1.SendTo("NetworkMain", new byte[i]);
-                NetworkAdditional1.SendTo("NetworkAdditional2", new byte[i]);
-                Thread.Sleep(timeout);
+                for (int i = 1; i <= 1000; i++)
+                {
+                    //Console.WriteLine(NetworkAdditional1.SendTo("NetworkMain", new byte[i]));
+                    //Console.WriteLine(NetworkAdditional1.SendTo(partnerId, new byte[i]));
+                    Thread.Sleep(timeout);
+                }
             }
         }
 
         private void Thread3()
         {
-            NetworkAdditional2.ConnectTo(new IPEndPoint(IPAddress.Parse(myIp), 111), null);
-            for (int i = 1; i <= 1000; i++)
+            string partnerId;
+            if (NetworkAdditional2.ConnectTo(new IPEndPoint(IPAddress.Parse(myIp), 111), null, out partnerId))
             {
-                NetworkAdditional2.SendTo("NetworkMain", new byte[i]);
-                NetworkAdditional2.SendTo("NetworkAdditional1", new byte[i]);
-                Thread.Sleep(timeout);
+                for (int i = 1; i <= 1000; i++)
+                {
+                    // Console.WriteLine(NetworkAdditional2.SendTo(partnerId, new byte[i]));
+                    // Console.WriteLine(NetworkAdditional2.SendTo("NetworkAdditional1", new byte[i]));
+                    Thread.Sleep(timeout);
+                }
             }
         }
 
