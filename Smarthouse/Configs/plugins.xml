@@ -3,13 +3,11 @@
   <moduleManager>
     <listener port="1111"/>
     <smarthouses>
-      <smarthouse ip="192.168.0.11" port="221"/> 
-      <smarthouse ip="192.168.0.12" port="222"/>
-      <smarthouse ip="192.168.0.13" port="223"/>
+      <smarthouse ip="192.168.0.6" port="1111"/> 
     </smarthouses>
   </moduleManager>
   <plugins>
-    <!--<plugin className="Smarthouse.TcpNetwork, Smarthouse, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <plugin className="Smarthouse.TcpNetwork, Smarthouse, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
       <description>
         <desc name="name" value="NetworkMain"/>
       </description>
@@ -18,7 +16,7 @@
         <listener port="111"/>
         <sender sendTimer="100"/>
       </moduleConfig>
-    </plugin>-->
+    </plugin>
     <plugin className="Smarthouse.TcpNetwork, Smarthouse, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
       <description>
         <desc name="name" value="NetworkAdditional1"/>
