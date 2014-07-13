@@ -20,24 +20,28 @@ namespace Smarthouse
             return true;
         }
 
+        private INetwork NetworkMain;
+        private INetwork NetworkAdditional1;
+        private INetwork NetworkAdditional2;
         public bool Start()
         {
-
-            Thread t1 = new Thread(Thread1);
-            Thread t2 = new Thread(Thread2);
-            Thread t3 = new Thread(Thread3);
+           // NetworkMain = (INetwork)Smarthouse.moduleManager.FindModule("name", "NetworkMain");
+            //NetworkAdditional1 = (INetwork)Smarthouse.moduleManager.FindModule("name", "NetworkAdditional1");
+            //NetworkAdditional2 = (INetwork)Smarthouse.moduleManager.FindModule("name", "NetworkAdditional2");
             
-
-            t1.Start();
-            t2.Start();
-            t3.Start();
-
+           // Thread t1 = new Thread(Thread1);
+           // Thread t2 = new Thread(Thread2);
+           // Thread t3 = new Thread(Thread3);
+            
+           // t1.Start();
+           // t2.Start();
+           // t3.Start();
+            //Console.ReadLine();
             return true;
         }
-        string myIp = "192.168.0.2";
+        string myIp = "192.168.0.5";
         private void Thread1()
         {
-            var NetworkMain = (INetwork)Smarthouse.moduleManager.FindModule("name", "NetworkMain");
             NetworkMain.ConnectTo(new IPEndPoint(IPAddress.Parse(myIp), 112), null);
             for (int i = 1; i <= 1000; i++)
             {
@@ -49,7 +53,6 @@ namespace Smarthouse
 
         private void Thread2()
         {
-            var NetworkAdditional1 = (INetwork)Smarthouse.moduleManager.FindModule("name", "NetworkAdditional1");
             NetworkAdditional1.ConnectTo(new IPEndPoint(IPAddress.Parse(myIp), 113), null);
             for (int i = 1; i <= 1000; i++)
             {
@@ -61,7 +64,6 @@ namespace Smarthouse
 
         private void Thread3()
         {
-            var NetworkAdditional2 = (INetwork)Smarthouse.moduleManager.FindModule("name", "NetworkAdditional2");
             NetworkAdditional2.ConnectTo(new IPEndPoint(IPAddress.Parse(myIp), 111), null);
             for (int i = 1; i <= 1000; i++)
             {
@@ -70,7 +72,7 @@ namespace Smarthouse
                 Thread.Sleep(timeout);
             }
         }
-       
+
         public bool Die()
         {
             //throw new NotImplementedException();

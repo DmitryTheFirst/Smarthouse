@@ -60,11 +60,19 @@ namespace Smarthouse
         }
         public bool LoadModule(string strongName, string cfgPath, Dictionary<string, string> description)
         {
-            if (!File.Exists(cfgPath))//checking cfg existance
-                return false;
+            if ( !File.Exists( cfgPath ) ) //checking cfg existance
+            {
+                Console.WriteLine( "Cfg doesn't exist!" );
+                 return false;
+            }
 
-            if (description == null)
+
+            if ( description == null )
+            {
+                Console.WriteLine("Descripton cant be null!");
                 return false;//descripton cant be null
+            }
+                
 
             Type type;
             try
