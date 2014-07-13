@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Xml;
 
 namespace Smarthouse
@@ -14,10 +16,26 @@ namespace Smarthouse
         public bool LoadAllModules()
         {
             modules = new List<IModule>();
-            XmlDocument pluginsConfig = new XmlDocument();
+            var pluginsConfig = new XmlDocument();
             pluginsConfig.Load(pluginsConfigPath);
+            #region Get moduleManager configs
+            var modulManagerConfig = pluginsConfig.SelectSingleNode("/config/moduleManager");//getting plugins section
+            var smarthouses = new List<RemoteSmarthouse>();
+            var listenerPort = int.Parse(modulManagerConfig.SelectSingleNode("listener").Attributes["port"].Value);
+            var smarthousesSection = modulManagerConfig.SelectSingleNode("smarthouses");
+            if (smarthousesSection != null)
+            {
+                smarthouses.AddRange(
+                    smarthousesSection.ChildNodes.Cast<XmlElement>()
+                                      .Select(
+                                          smarthouseNode => new RemoteSmarthouse(new IPEndPoint(
+                                              IPAddress.Parse(smarthouseNode.Attributes["ip"].Value),
+                                              int.Parse(smarthouseNode.Attributes["port"].Value)), false)
+                                           ));//add smarthouses from cfg to smarthouses list
+            }
+            #endregion
             #region Load all modules
-            var pluginSection = pluginsConfig.SelectSingleNode("/plugins");//getting plugins section
+            var pluginSection = pluginsConfig.SelectSingleNode("/config/plugins");//getting plugins section
             foreach (XmlElement plugin in pluginSection.ChildNodes)
             {
                 var className = plugin.Attributes["className"];
@@ -40,8 +58,8 @@ namespace Smarthouse
             }
 
             #endregion
-            modules.Reverse();//next cycle will be reversed, because we can delete modules. So, to save the right order of initializations, we need to reverse modules arr
             #region Init all modules
+            modules.Reverse();//next cycle will be reversed, because we can delete modules. So, to save the right order of initializations, we need to reverse modules arr
             for (int i = modules.Count - 1; i >= 0; i--)
             {
                 var module = modules[i];
@@ -52,8 +70,14 @@ namespace Smarthouse
                 modules.RemoveAt(i);
             }
             #endregion
-            //here we find&create create stubs
+            #region Working with stubs
+            TcpListener listener = new TcpListener(IPAddress.Any, listenerPort); //listener for all smarthouses
+            listener.BeginAcceptTcpClient(AcceptSmarthouse, listener);
+            foreach (var smarthouse in smarthouses)
+            {
 
+            }
+            #endregion
             #region Start all modules
             for (var i = modules.Count - 1; i >= 0; i--)
             {
@@ -67,6 +91,13 @@ namespace Smarthouse
             #endregion
             return pluginSection.ChildNodes.Count == modules.Count;//read modules == now loaded
         }
+
+        #region Working with stubs
+        void AcceptSmarthouse(IAsyncResult ar)
+        {
+            //server side code
+        }
+        #endregion
         public bool LoadModule(string strongName, XmlNode cfg, Dictionary<string, string> description)
         {
             if (cfg == null) //checking cfg existance
@@ -124,5 +155,17 @@ namespace Smarthouse
         {
             return modules.Any(a => a.Description["name"] == moduleName);
         }
+    }
+
+    class RemoteSmarthouse
+    {
+        public RemoteSmarthouse(IPEndPoint ipEndPoint, bool connected)
+        {
+            this.ipEndPoint = ipEndPoint;
+            this.connected = connected;
+        }
+
+        IPEndPoint ipEndPoint { get; set; }
+        bool connected { get; set; }
     }
 }
