@@ -28,15 +28,14 @@ namespace Smarthouse
                 smarthouses.AddRange(
                     smarthousesSection.ChildNodes.Cast<XmlElement>()
                                       .Select(
-                                          smarthouseNode => new RemoteSmarthouse(new IPEndPoint(
+                                          smarthouseNode => new RemoteSmarthouse(
                                               IPAddress.Parse(smarthouseNode.Attributes["ip"].Value),
-                                              int.Parse(smarthouseNode.Attributes["port"].Value)), false)
-                                           ));//add smarthouses from cfg to smarthouses list
+                                              int.Parse(smarthouseNode.Attributes["port"].Value))));//add smarthouses from cfg to smarthouses list
             }
             #endregion
             #region Load all modules
             var pluginSection = pluginsConfig.SelectSingleNode("/config/plugins");//getting plugins section
-            foreach (XmlElement plugin in pluginSection.ChildNodes)
+            foreach (XmlElement plugin in pluginSection.ChildNodes.OfType<XmlElement>())
             {
                 var className = plugin.Attributes["className"];
                 var moduleConfig = plugin.SelectSingleNode("moduleConfig");
@@ -72,10 +71,15 @@ namespace Smarthouse
             #endregion
             #region Working with stubs
             TcpListener listener = new TcpListener(IPAddress.Any, listenerPort); //listener for all smarthouses
+            listener.Start();
             listener.BeginAcceptTcpClient(AcceptSmarthouse, listener);
-            foreach (var smarthouse in smarthouses)
+            for (int i = 0; i < smarthouses.Count; i++)
             {
-
+                var smarthouse = smarthouses[i];
+                if (smarthouse.Synchronized)
+                    continue;  //this was already synchronized
+                TcpClient client = new TcpClient();
+                client.BeginConnect(smarthouse.IP, smarthouse.Port, ConnectSmarthouse, client);
             }
             #endregion
             #region Start all modules
@@ -94,6 +98,10 @@ namespace Smarthouse
 
         #region Working with stubs
         void AcceptSmarthouse(IAsyncResult ar)
+        {
+            //server side code
+        }
+        void ConnectSmarthouse(IAsyncResult ar)
         {
             //server side code
         }
@@ -159,13 +167,15 @@ namespace Smarthouse
 
     class RemoteSmarthouse
     {
-        public RemoteSmarthouse(IPEndPoint ipEndPoint, bool connected)
+        public RemoteSmarthouse(IPAddress ip, int port)
         {
-            this.ipEndPoint = ipEndPoint;
-            this.connected = connected;
+            IP = ip;
+            Port = port;
+            Synchronized = false;//on add is always false
         }
 
-        IPEndPoint ipEndPoint { get; set; }
-        bool connected { get; set; }
+        public IPAddress IP { get; set; }
+        public int Port { get; set; }
+        public bool Synchronized { get; set; }
     }
 }
