@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Xml;
 
 namespace Smarthouse
@@ -8,6 +9,13 @@ namespace Smarthouse
     {
         public Dictionary<string, string> Description { get; set; }
         public XmlNode Cfg { get; set; }
+        public Dictionary<string, Func<byte[]>> MethodResolver { get; set; }
+        public bool Stub { get; set; }
+        public EndPoint RealIp { get; set; }
+        public string StubCryptModuleName { get; set; }
+        public TcpNetwork UsingNetwork { get; set; }
+        public string PartnerNetworkId { get; set; }
+
         public bool Init()
         {
             throw new NotImplementedException();
@@ -17,6 +25,12 @@ namespace Smarthouse
         {
             throw new NotImplementedException();
         }
+
+        public void ExecSerializedCommand( string user, byte[] data )
+        {
+            throw new NotImplementedException();
+        }
+
         public bool Die()
         {
             throw new NotImplementedException();

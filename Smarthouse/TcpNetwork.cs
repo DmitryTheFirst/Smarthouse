@@ -31,6 +31,12 @@ namespace Smarthouse
         #region IModule vars
         public Dictionary<string, string> Description { get; set; }
         public XmlNode Cfg { get; set; }
+        public Dictionary<string, Func<byte[]>> MethodResolver { get; set; }
+        public bool Stub { get; set; }
+        public EndPoint RealIp { get; set; }
+        public string StubCryptModuleName { get; set; }
+        public TcpNetwork UsingNetwork { get; set; }
+        public string PartnerNetworkId { get; set; }
         #endregion
 
         public TcpNetwork()
@@ -106,6 +112,11 @@ namespace Smarthouse
             Listener();
             sendTimer.Start();
             return true;
+        }
+
+        public void ExecSerializedCommand( string user, byte[] data )
+        {
+            throw new NotImplementedException();
         }
 
         public bool ConnectTo(EndPoint partnerUri, Crypt crypt, out string partnerId)

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Xml;
 using Raspberry.IO;
 using Raspberry.IO.GeneralPurpose;
@@ -10,6 +11,13 @@ namespace Smarthouse
     {
         public Dictionary<string, string> Description { get; set; }
         public XmlNode Cfg { get; set; }
+        public Dictionary<string, Func<byte[]>> MethodResolver { get; set; }
+        public bool Stub { get; set; }
+        public EndPoint RealIp { get; set; }
+        public string StubCryptModuleName { get; set; }
+        public TcpNetwork UsingNetwork { get; set; }
+        public string PartnerNetworkId { get; set; }
+
         public bool Init()
         {
             var led1 = ConnectorPin.P1Pin11.Output();
@@ -46,6 +54,11 @@ namespace Smarthouse
         public bool Start()
         {
             return true;
+        }
+
+        public void ExecSerializedCommand( string user, byte[] data )
+        {
+            throw new NotImplementedException();
         }
 
         public bool Die()

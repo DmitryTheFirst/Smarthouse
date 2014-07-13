@@ -14,6 +14,12 @@ namespace Smarthouse
         private int timeout = 100;
         public Dictionary<string, string> Description { get; set; }
         public XmlNode Cfg { get; set; }
+        public Dictionary<string, Func<byte[]>> MethodResolver { get; set; }
+        public bool Stub { get; set; }
+        public EndPoint RealIp { get; set; }
+        public string StubCryptModuleName { get; set; }
+        public TcpNetwork UsingNetwork { get; set; }
+        public string PartnerNetworkId { get; set; }
 
         public bool Init()
         {
@@ -38,6 +44,12 @@ namespace Smarthouse
             t3.Start();
             return true;
         }
+
+        public void ExecSerializedCommand( string user, byte[] data )
+        {
+            throw new NotImplementedException();
+        }
+
         string myIp = "192.168.0.100";
         private void Thread1()
         {
