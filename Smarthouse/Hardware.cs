@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Xml;
 using Raspberry.IO;
 using Raspberry.IO.GeneralPurpose;
 
@@ -9,7 +10,7 @@ namespace Smarthouse
     {
         public Dictionary<string, string> Description { get; set; }
         public string StrongName { get; set; }
-        public string CfgPath { get; set; }
+        public XmlNode Cfg { get; set; }
         public bool Init()
         {
             var led1 = ConnectorPin.P1Pin11.Output();

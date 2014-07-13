@@ -15,10 +15,10 @@ namespace Smarthouse
         {
             Console.WriteLine("Hello world!");
             Smarthouse.StartSmarthouse();
-           
+
             Console.ReadKey();
         }
     }
 
-    
+
 }

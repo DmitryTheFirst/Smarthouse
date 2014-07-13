@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml;
 using System.Xml.Linq;
 using Timer = System.Timers.Timer;
 
@@ -23,42 +24,36 @@ namespace Smarthouse
         private Thread senderThread;
         private const string notIdentified = "not identified";
         private const string anonymous = "anonymous";
-        private Timer sendTimer = new Timer(100);
+        private Timer sendTimer = new Timer();
         private object bufferLock = new object();
         private CancellationTokenSource listenerToken;
 
         #region IModule vars
         public Dictionary<string, string> Description { get; set; }
         public string StrongName { get; set; }
-        public string CfgPath { get; set; }
+        public XmlNode Cfg { get; set; }
         #endregion
 
         public TcpNetwork()
         {
             connections = new Dictionary<string, TcpPartner>();
             outputBuffer = new List<ToSend>();
-            //listenerThread = new Thread(Listener);
-            //Task.Run( Listener,  )
             senderThread = new Thread(Sender);
             sendTimer.Elapsed += sendData;
         }
         public bool Init()
         {
             #region Parse from cfg
-            var root = XDocument.Load(CfgPath);
-            try
-            {
-                if (!int.TryParse(root.Root.Element("listener").Attribute("port").Value, out port))
-                    return false; //strange config
-                localID = root.Root.Element("host").Attribute("localID").Value;
-            }
-            catch (NullReferenceException)
-            {
-                return false; //strange config
-            }
+            int sendTimerInterval;
+            if (!int.TryParse(Cfg.SelectSingleNode("listener").Attributes["port"].Value, out port))
+                return false; //we REALLY need this port
+            if (!int.TryParse(Cfg.SelectSingleNode("sender").Attributes["sendTimer"].Value, out sendTimerInterval))
+                return false;
+            localID = Cfg.SelectSingleNode("host").Attributes["localID"].Value;
             #endregion
+            sendTimer.Interval = sendTimerInterval;
             listenerToken = new CancellationTokenSource();
-            listener = new TcpListener(IPAddress.Any, port); //get port from cfg
+            listener = new TcpListener(IPAddress.Any, port);
             return true;
         }
 
@@ -100,7 +95,10 @@ namespace Smarthouse
 
         private void ErrorHandler(Exception exception)
         {
-            //throw new NotImplementedException();
+            throw new NotImplementedException();
+            //{"Если базовый поток недоступен для поиска, запись в объект BufferedStream будет невозможна, "
+            // + "пока буфер чтения не станет пустым. Убедитесь, что поток, базовый для объекта BufferedStream, "
+            // + "доступен для поиска, или не выполняйте чередующиеся операции записи и чтения в этом объекте."}
         }
 
         public bool Start()
@@ -193,12 +191,6 @@ namespace Smarthouse
         private Stream PrepareStream(TcpClient client)
         {
             return new BufferedStream(client.GetStream(), 65536);
-        }
-
-        class StateObject
-        {
-            private byte[] buff = new byte[sizeof(int)];
-            private Stream partnerStream { get; set; }
         }
 
         public bool AuthServer(Stream newPartner, out string cryptModuleName, out string remoteId)

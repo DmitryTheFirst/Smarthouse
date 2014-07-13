@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<plugins>
+  <plugin className="Smarthouse.TcpNetwork, Smarthouse, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <description>
+      <desc name="name" value="NetworkMain"/>
+    </description>
+    <moduleConfig>
+      <host localID="NetworkMain"/>
+      <listener port="111"/>
+      <sender sendTimer="100"/>
+    </moduleConfig>
+  </plugin>
+  <plugin className="Smarthouse.TcpNetwork, Smarthouse, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <description>
+      <desc name="name" value="NetworkAdditional1"/>
+    </description>
+    <moduleConfig>
+      <host localID="NetworkAdditional1"/>
+      <listener port="112"/>
+      <sender sendTimer="100"/>
+    </moduleConfig>
+  </plugin>
+  <plugin className="Smarthouse.TcpNetwork, Smarthouse, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <description>
+      <desc name="name" value="NetworkAdditional2"/>
+    </description>
+    <moduleConfig>
+      <host localID="NetworkAdditional2"/>
+      <listener port="113"/>
+      <sender sendTimer="100"/>
+    </moduleConfig>
+  </plugin>
+  <plugin className="Smarthouse.Test, Smarthouse, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <description>
+      <desc name="name" value="Test"/>
+    </description>
+    <moduleConfig>
+
+    </moduleConfig>
+  </plugin>
+</plugins>

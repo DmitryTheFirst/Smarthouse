@@ -3,76 +3,80 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
 using System.Linq;
+using System.Xml;
 
 namespace Smarthouse
 {
     class ModuleManager
     {
-        //key - strong-name(Smarthouse.Program, Smarthouse, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null), value - module
         List<IModule> modules;
-
+        private const string pluginsConfigPath = @"C:\Users\Smirnyaga\GoogleDrive\code\Not done\C#\Smarthouse\Smarthouse\Configs\plugins.xml";
         public bool LoadAllModules()
         {
-            this.modules = new List<IModule>();
-            //todo create optimize dictionaries
-            var plugins = (PluginsSection)ConfigurationManager.GetSection("plugins");
+            modules = new List<IModule>();
+            XmlDocument pluginsConfig = new XmlDocument();
+            pluginsConfig.Load(pluginsConfigPath);
             #region Load all modules
-            for (int i = 0; i < plugins.Services.Count; i++)
+            var pluginSection = pluginsConfig.SelectSingleNode("/plugins");//getting plugins section
+            foreach (XmlElement plugin in pluginSection.ChildNodes)
             {
-                var plugin = plugins.Services[i];
-                if (!LoadModule(plugin.ClassName, plugin.ConfigPath,
-                    plugin.Description.OfType<NameValueConfigurationElement>().ToDictionary(a => a.Name, b => b.Value)))
+                var className = plugin.Attributes["className"];
+                var moduleConfig = plugin.SelectSingleNode("moduleConfig");
+                var discriptionDictionary = new Dictionary<string, string>();
+                #region Filling discriptionDictionary
+                foreach (XmlNode desc in plugin.SelectSingleNode("description").ChildNodes)
                 {
-                    Console.WriteLine("Error! Couldn't load: " + plugins.Services[i].ClassName + ".  Cfg path: " + plugins.Services[i].ConfigPath);
+                    if (desc.Attributes != null)
+                        discriptionDictionary.Add(desc.Attributes["name"].Value, desc.Attributes["value"].Value);
                 }
+                #endregion
+                if (LoadModule(className.Value, moduleConfig, discriptionDictionary)) continue; //all's ok
+
+                //ERROR
+                if (discriptionDictionary.ContainsKey("name"))
+                    Console.WriteLine("Error! Couldn't load: " + discriptionDictionary["name"]);
+                else
+                    Console.WriteLine("Error! Couldn't load: " + className.Value);
             }
+
             #endregion
-            modules.Reverse();
+            modules.Reverse();//next cycle will be reversed, because we can delete modules. So, to save the right order of initializations, we need to reverse modules arr
             #region Init all modules
             for (int i = modules.Count - 1; i >= 0; i--)
             {
                 var module = modules[i];
-                if (!module.Init()) //init module with it's cfg(already in module)
-                {
-                    Console.WriteLine("Error initing " + module.Description["name"] + " module");
-                    module.Die();
-                    modules.RemoveAt(i);
-                }
+                if (module.Init()) continue;//all's ok
+                //ERROR
+                Console.WriteLine("Error initing " + module.Description["name"] + " module");
+                module.Die();
+                modules.RemoveAt(i);
             }
             #endregion
             //here we find&create create stubs
 
-
             #region Start all modules
-            for (int i = modules.Count - 1; i >= 0; i--)
+            for (var i = modules.Count - 1; i >= 0; i--)
             {
                 var module = modules[i];
-                if (!module.Start()) //init module with it's cfg(already in module)
-                {
-                    Console.WriteLine("Error starting " + module.Description["name"] + " module");
-                    module.Die();
-                    modules.RemoveAt(i);
-                }
+                if (module.Start()) continue;//all's ok
+                //ERROR
+                Console.WriteLine("Error starting " + module.Description["name"] + " module");
+                module.Die();
+                modules.RemoveAt(i);
             }
             #endregion
-
-            return plugins.Services.Count == modules.Count;
+            return pluginSection.ChildNodes.Count == modules.Count;//read modules == now loaded
         }
-        public bool LoadModule(string strongName, string cfgPath, Dictionary<string, string> description)
+        public bool LoadModule(string strongName, XmlNode cfg, Dictionary<string, string> description)
         {
-            if ( !File.Exists( cfgPath ) ) //checking cfg existance
-            {
-                Console.WriteLine( "Cfg doesn't exist!" );
-                 return false;
-            }
+            if (cfg == null) //checking cfg existance
+                Console.WriteLine("Allert: config is null!");
 
-
-            if ( description == null )
+            if (description == null || !description.ContainsKey("name"))
             {
-                Console.WriteLine("Descripton cant be null!");
-                return false;//descripton cant be null
+                Console.WriteLine("Error: descripton must contain \"name\" attribute!");
+                return false;//descripton cant be null. At least you need to have "name attribute"
             }
-                
 
             Type type;
             try
@@ -92,15 +96,14 @@ namespace Smarthouse
 
             modules.Add((IModule)Activator.CreateInstance(type));//adding module to list. Here works standart constructor in module
             modules[modules.Count - 1].StrongName = strongName;
-            modules[modules.Count - 1].CfgPath = cfgPath;
+            modules[modules.Count - 1].Cfg = cfg;
             modules[modules.Count - 1].Description = description;
-
             return true;
         }
         public bool UnloadModule(string descriptionKey, string descriptionValue)
         {
             throw new NotImplementedException();
-            //return this.findModule(descriptionKey, descriptionValue).Die();
+            //return findModule(descriptionKey, descriptionValue).Die();
         }
         public bool UnloadAllModules()
         {

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Xml;
 
 namespace Smarthouse
 {
@@ -7,7 +8,7 @@ namespace Smarthouse
     {
         public Dictionary<string, string> Description { get; set; }
         public string StrongName { get; set; }
-        public string CfgPath { get; set; }
+        public XmlNode Cfg { get; set; }
         public bool Init()
         {
             throw new NotImplementedException();
