@@ -12,9 +12,10 @@ namespace Smarthouse
     class ModuleManager
     {
         List<IModule> modules;
-        private const string pluginsConfigPath = @"C:\Users\Smirnyaga\GoogleDrive\code\Not done\C#\Smarthouse\Smarthouse\Configs\plugins.xml";
-        public bool LoadAllModules()
+        private string pluginsConfigPath;
+        public bool LoadAllModules(string configPath)
         {
+            pluginsConfigPath = configPath;
             modules = new List<IModule>();
             var pluginsConfig = new XmlDocument();
             pluginsConfig.Load(pluginsConfigPath);
@@ -99,11 +100,12 @@ namespace Smarthouse
         #region Working with stubs
         void AcceptSmarthouse(IAsyncResult ar)
         {
-            //server side code
+            Console.WriteLine("SERVER AcceptSmarthouse");
+
         }
         void ConnectSmarthouse(IAsyncResult ar)
         {
-            //server side code
+            Console.WriteLine("CLIENT ConnectSmarthouse");
         }
         #endregion
         public bool LoadModule(string strongName, XmlNode cfg, Dictionary<string, string> description)

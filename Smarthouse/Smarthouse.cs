@@ -6,10 +6,10 @@
         
 
         
-        public static void StartSmarthouse()
+        public static void StartSmarthouse(string moduleManagerConfigPath)
         {
             moduleManager = new ModuleManager();
-            moduleManager.LoadAllModules();
+            moduleManager.LoadAllModules(moduleManagerConfigPath);
         }
 
         
