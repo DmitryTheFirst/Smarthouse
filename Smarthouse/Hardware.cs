@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Threading;
 using System.Xml;
-using Raspberry.IO;
 using Raspberry.IO.GeneralPurpose;
 
 namespace Smarthouse
@@ -15,7 +15,7 @@ namespace Smarthouse
         public bool Stub { get; set; }
         public EndPoint RealIp { get; set; }
         public string StubCryptModuleName { get; set; }
-        public TcpNetwork UsingNetwork { get; set; }
+        public INetwork UsingNetwork { get; set; }
         public string PartnerNetworkId { get; set; }
 
         public bool Init()
@@ -40,7 +40,7 @@ namespace Smarthouse
                 }
 
                 connection1.Toggle(led1);
-                System.Threading.Thread.Sleep(i1);
+                Thread.Sleep(i1);
                connection1.Toggle(led1);
 
                 connection2.Blink(led2, i2);
@@ -63,7 +63,7 @@ namespace Smarthouse
 
         public bool Die()
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
     }
 }

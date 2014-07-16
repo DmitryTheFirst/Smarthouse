@@ -7,13 +7,13 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
 using System.Xml;
-using System.Xml.Linq;
 using Timer = System.Timers.Timer;
 
 namespace Smarthouse
 {
-    internal class TcpNetwork : IModule
+    public class TcpNetwork : INetwork
     {
         private Dictionary<string, TcpPartner> connections; // string - partner's ID
         private TcpListener listener;                       // server listener
@@ -35,7 +35,7 @@ namespace Smarthouse
         public bool Stub { get; set; }
         public EndPoint RealIp { get; set; }
         public string StubCryptModuleName { get; set; }
-        public TcpNetwork UsingNetwork { get; set; }
+        public INetwork UsingNetwork { get; set; }
         public string PartnerNetworkId { get; set; }
         #endregion
 
@@ -62,7 +62,7 @@ namespace Smarthouse
             return true;
         }
 
-        private async void sendData(object sender, System.Timers.ElapsedEventArgs e)
+        private async void sendData(object sender, ElapsedEventArgs e)
         {
             ToSend[] sendData;
             lock (bufferLock)
@@ -271,32 +271,5 @@ namespace Smarthouse
             sendTimer.Stop();
             return true;
         }
-    }
-
-    internal class ToSend
-    {
-        public ToSend(string partner, byte[] data)
-        {
-            this.partner = partner;
-            this.data = data;
-        }
-
-        public string partner { get; set; }
-        public byte[] data { get; set; }
-    }
-
-    internal class TcpPartner
-    {
-        public TcpPartner(Stream partnerStream, string username, string CryptName)
-        {
-            TcpStream = partnerStream;
-            Username = username;
-            if (!String.IsNullOrWhiteSpace(CryptName))
-                Crypt = (Crypt)Smarthouse.moduleManager.FindModule("name", CryptName);
-        }
-
-        public Stream TcpStream { get; set; }
-        private string Username { get; set; }
-        private Crypt Crypt { get; set; }
     }
 }

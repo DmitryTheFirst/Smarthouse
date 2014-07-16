@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Xml;
 
 namespace Smarthouse
@@ -18,7 +15,7 @@ namespace Smarthouse
         public bool Stub { get; set; }
         public EndPoint RealIp { get; set; }
         public string StubCryptModuleName { get; set; }
-        public TcpNetwork UsingNetwork { get; set; }
+        public INetwork UsingNetwork { get; set; }
         public string PartnerNetworkId { get; set; }
 
         public bool Init()
