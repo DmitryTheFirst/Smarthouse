@@ -5,7 +5,7 @@ using System.Xml;
 
 namespace Smarthouse
 {
-    interface IModule
+    public interface IModule
     {
         //Description.key is class name(reflection) for what i need it and value - some string to identify from callig class
         Dictionary<string, string> Description { get; set; }
@@ -15,7 +15,7 @@ namespace Smarthouse
         #region required for stub
         EndPoint RealIp { get; set; }//ip:port of location of real module
         string StubCryptModuleName { get; set; }//Encryption module if it's not @safe to work" network
-        TcpNetwork UsingNetwork { get; set; }//network that stub will use to redirect command
+        INetwork UsingNetwork { get; set; }//network that stub will use to redirect command
         string PartnerNetworkId { get; set; }//id of partner for this module(uniq, like realIp)
         #endregion
 

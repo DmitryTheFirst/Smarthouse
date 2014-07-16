@@ -14,19 +14,19 @@ namespace Smarthouse
         SHA1 sha1 = new SHA1CryptoServiceProvider();
         public AccountManager()
         {
-            this.users = new Dictionary<string, User>();
+            users = new Dictionary<string, User>();
         }
 
         private bool CheckPassword(string username, string password, string moduleFriendlyName)
         {
             bool success;
-            if (!this.users.ContainsKey(username)) //no such user
+            if (!users.ContainsKey(username)) //no such user
                 return false;
-            User user = this.users[username];
-            if ((user.failLogins.Count < this.maxLoginFailes)
-                || (DateTime.Now - user.failLogins[user.failLogins.Count - this.maxLoginFailes].date > this.delay))
+            User user = users[username];
+            if ((user.failLogins.Count < maxLoginFailes)
+                || (DateTime.Now - user.failLogins[user.failLogins.Count - maxLoginFailes].date > delay))
             {
-                success = this.Hash(password).Equals(user.hashpass);
+                success = Hash(password).Equals(user.hashpass);
             }
             else
             {
@@ -47,12 +47,12 @@ namespace Smarthouse
 
         private byte[] Hash(string password)
         {
-            return this.sha1.ComputeHash(GetBytes(password));
+            return sha1.ComputeHash(GetBytes(password));
         }
         static byte[] GetBytes(string str)
         {
             byte[] bytes = new byte[str.Length * sizeof(char)];
-            System.Buffer.BlockCopy(str.ToCharArray(), 0, bytes, 0, bytes.Length);
+            Buffer.BlockCopy(str.ToCharArray(), 0, bytes, 0, bytes.Length);
             return bytes;
         }
 
@@ -91,7 +91,7 @@ namespace Smarthouse
         public bool Stub { get; set; }
         public EndPoint RealIp { get; set; }
         public string StubCryptModuleName { get; set; }
-        public TcpNetwork UsingNetwork { get; set; }
+        public INetwork UsingNetwork { get; set; }
         public string PartnerNetworkId { get; set; }
 
         public bool Init()

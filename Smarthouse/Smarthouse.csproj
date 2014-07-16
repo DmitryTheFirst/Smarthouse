@@ -57,15 +57,19 @@
     <Compile Include="AccountManager.cs" />
     <Compile Include="Crypt.cs" />
     <Compile Include="Hardware.cs" />
-    <Compile Include="ICrypt.cs" />
-    <Compile Include="IModule.cs" />
+    <Compile Include="Interfaces\ICrypt.cs" />
+    <Compile Include="Interfaces\IModule.cs" />
+    <Compile Include="Interfaces\INetwork.cs" />
     <Compile Include="ModuleManager.cs" />
     <Compile Include="TcpNetwork.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Smarthouse.cs" />
+    <Compile Include="TcpNetworkNext.cs" />
+    <Compile Include="TcpPartner.cs" />
     <Compile Include="Terminal.cs" />
     <Compile Include="Test.cs" />
+    <Compile Include="ToSend.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -74,6 +78,7 @@
     <Content Include="Configs\addConfig.xml" />
     <Content Include="Configs\plugins.xml" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
