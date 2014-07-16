@@ -20,9 +20,12 @@ namespace Smarthouse
         public string StubCryptModuleName { get; set; }
         public TcpNetwork UsingNetwork { get; set; }
         public string PartnerNetworkId { get; set; }
-
+        private string myIp;
         public bool Init()
         {
+            #region Parse from cfg
+            myIp = Cfg.SelectSingleNode("netCfg").Attributes["ip"].Value;
+            #endregion
             return true;
         }
 
@@ -45,21 +48,23 @@ namespace Smarthouse
             return true;
         }
 
-        public void ExecSerializedCommand( string user, byte[] data )
+        public void ExecSerializedCommand(string user, byte[] data)
         {
             throw new NotImplementedException();
         }
 
-        string myIp = "192.168.0.100";
+
         private void Thread1()
         {
             string partnerId;
             if (NetworkMain.ConnectTo(new IPEndPoint(IPAddress.Parse(myIp), 112), null, out partnerId))
             {
+                Console.WriteLine("NetworkMain connected to NetworkAdditional1");
                 for (int i = 1; i <= 1000; i++)
                 {
-                    ///Console.WriteLine(NetworkMain.SendTo(partnerId, new byte[i]));
-                    Console.WriteLine(NetworkMain.SendTo("NetworkAdditional2", new byte[i]));
+                    NetworkMain.SendTo("NetworkAdditional1", new byte[i]);
+                    NetworkMain.SendTo("NetworkAdditional2", new byte[i]);
+
                     Thread.Sleep(timeout);
                 }
             }
@@ -70,10 +75,11 @@ namespace Smarthouse
             string partnerId;
             if (NetworkAdditional1.ConnectTo(new IPEndPoint(IPAddress.Parse(myIp), 113), null, out partnerId))
             {
+                Console.WriteLine("NetworkAdditional1 connected to NetworkAdditional2");
                 for (int i = 1; i <= 1000; i++)
                 {
                     //Console.WriteLine(NetworkAdditional1.SendTo("NetworkMain", new byte[i]));
-                    //Console.WriteLine(NetworkAdditional1.SendTo(partnerId, new byte[i]));
+                    //Console.WriteLine(NetworkAdditional1.SendTo("NetworkAdditional2", new byte[i]));
                     Thread.Sleep(timeout);
                 }
             }
@@ -84,6 +90,7 @@ namespace Smarthouse
             string partnerId;
             if (NetworkAdditional2.ConnectTo(new IPEndPoint(IPAddress.Parse(myIp), 111), null, out partnerId))
             {
+                Console.WriteLine("NetworkAdditional2 connected to NetworkMain");
                 for (int i = 1; i <= 1000; i++)
                 {
                     // Console.WriteLine(NetworkAdditional2.SendTo(partnerId, new byte[i]));

@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Xml;
 
 namespace Smarthouse
@@ -23,6 +24,7 @@ namespace Smarthouse
             var modulManagerConfig = pluginsConfig.SelectSingleNode("/config/moduleManager");//getting plugins section
             var smarthouses = new List<RemoteSmarthouse>();
             var listenerPort = int.Parse(modulManagerConfig.SelectSingleNode("listener").Attributes["port"].Value);
+            var connectionTimeout = int.Parse(modulManagerConfig.SelectSingleNode("client").Attributes["timeoutSecs"].Value);
             var smarthousesSection = modulManagerConfig.SelectSingleNode("smarthouses");
             if (smarthousesSection != null)
             {
@@ -79,8 +81,26 @@ namespace Smarthouse
                 var smarthouse = smarthouses[i];
                 if (smarthouse.Synchronized)
                     continue;  //this was already synchronized
-                TcpClient client = new TcpClient();
-                client.BeginConnect(smarthouse.IP, smarthouse.Port, ConnectSmarthouse, client);
+                using (TcpClient client = new TcpClient())
+                {
+                    IAsyncResult ar = client.BeginConnect(smarthouse.IP, smarthouse.Port, null, null);
+                    WaitHandle wh = ar.AsyncWaitHandle;
+                    try
+                    {
+                        if (!ar.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(connectionTimeout), false))
+                        {
+                            client.Close();
+                            Console.WriteLine(smarthouse.IP + " wasn't answering on connection request for " + connectionTimeout + " seconds.");
+                            break;
+                        }
+
+                        client.EndConnect(ar);
+                    }
+                    finally
+                    {
+                        wh.Close();
+                    }
+                }
             }
             #endregion
             #region Start all modules
@@ -102,10 +122,6 @@ namespace Smarthouse
         {
             Console.WriteLine("SERVER AcceptSmarthouse");
 
-        }
-        void ConnectSmarthouse(IAsyncResult ar)
-        {
-            Console.WriteLine("CLIENT ConnectSmarthouse");
         }
         #endregion
         public bool LoadModule(string strongName, XmlNode cfg, Dictionary<string, string> description)

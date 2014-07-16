@@ -101,9 +101,6 @@ namespace Smarthouse
         private void ErrorHandler(Exception exception)
         {
             throw new NotImplementedException();
-            //{"Если базовый поток недоступен для поиска, запись в объект BufferedStream будет невозможна, "
-            // + "пока буфер чтения не станет пустым. Убедитесь, что поток, базовый для объекта BufferedStream, "
-            // + "доступен для поиска, или не выполняйте чередующиеся операции записи и чтения в этом объекте."}
         }
 
         public bool Start()
@@ -114,7 +111,7 @@ namespace Smarthouse
             return true;
         }
 
-        public void ExecSerializedCommand( string user, byte[] data )
+        public void ExecSerializedCommand(string user, byte[] data)
         {
             throw new NotImplementedException();
         }
@@ -187,7 +184,6 @@ namespace Smarthouse
                     cnt += await stream.ReadAsync(buf, cnt, length - cnt, token);
                 } while (cnt < length && !token.IsCancellationRequested);
                 await ProcessData(buf, remoteId, stream);
-
             }
         }
 
@@ -198,7 +194,7 @@ namespace Smarthouse
 
         private Stream PrepareStream(TcpClient client)
         {
-            return new BufferedStream(client.GetStream(), 65536);
+            return client.GetStream();
         }
 
         public bool AuthServer(Stream newPartner, out string cryptModuleName, out string remoteId)
@@ -253,7 +249,6 @@ namespace Smarthouse
                 }
             } while (true);
         }
-
 
         public bool SendTo(string partnerId, byte[] data)
         {
