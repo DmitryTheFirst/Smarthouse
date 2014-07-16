@@ -61,11 +61,10 @@
     <Compile Include="Interfaces\IModule.cs" />
     <Compile Include="Interfaces\INetwork.cs" />
     <Compile Include="ModuleManager.cs" />
-    <Compile Include="TcpNetwork.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Smarthouse.cs" />
-    <Compile Include="TcpNetworkNext.cs" />
+    <Compile Include="TcpNetwork.cs" />
     <Compile Include="TcpPartner.cs" />
     <Compile Include="Terminal.cs" />
     <Compile Include="Test.cs" />

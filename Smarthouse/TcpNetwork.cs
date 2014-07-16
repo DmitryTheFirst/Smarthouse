@@ -7,7 +7,6 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Timers;
 using System.Xml;
 using Timer = System.Timers.Timer;
 
@@ -15,99 +14,48 @@ namespace Smarthouse
 {
     public class TcpNetwork : INetwork
     {
-        private Dictionary<string, TcpPartner> connections; // string - partner's ID
-        private TcpListener listener;                       // server listener
-        private List<ToSend> outputBuffer;                  // output buffer
-        private int port;                                   // listened port
-        private string localID;                             // current node id
-        private Thread listenerThread;
-        private Thread senderThread;
-        private const string notIdentified = "not identified";
-        private const string anonymous = "anonymous";
-        private Timer sendTimer = new Timer();
-        private object bufferLock = new object();
-        private CancellationTokenSource listenerToken;
-
-        #region IModule vars
+        #region IModule
         public Dictionary<string, string> Description { get; set; }
         public XmlNode Cfg { get; set; }
         public Dictionary<string, Func<byte[]>> MethodResolver { get; set; }
         public bool Stub { get; set; }
         public EndPoint RealIp { get; set; }
         public string StubCryptModuleName { get; set; }
-        public INetwork UsingNetwork { get; set; }
+        public TcpNetwork UsingNetwork { get; set; }
         public string PartnerNetworkId { get; set; }
         #endregion
 
-        public TcpNetwork()
-        {
-            connections = new Dictionary<string, TcpPartner>();
-            outputBuffer = new List<ToSend>();
-            senderThread = new Thread(Sender);
-            sendTimer.Elapsed += sendData;
-        }
+        private const string AnonymousName = "anonymous";
+        private readonly object _pipesLocker = new object();
+
+        private readonly object _sendBufferLocker = new object();
+        private NetworkConfig _configuration;
+
+        private TcpListener _listener;
+        private CancellationTokenSource _cancelToken;
+        private Dictionary<string, TcpPartner> _pipes;
+        private List<Tuple<string, byte[]>> _sendBuffer;
+        private Timer _sendTimer;
+
+        #region INetwork
         public bool Init()
         {
-            #region Parse from cfg
-            int sendTimerInterval;
-            if (!int.TryParse(Cfg.SelectSingleNode("listener").Attributes["port"].Value, out port))
-                return false; //we REALLY need this port
-            if (!int.TryParse(Cfg.SelectSingleNode("sender").Attributes["sendTimer"].Value, out sendTimerInterval))
-                return false;
-            localID = Cfg.SelectSingleNode("host").Attributes["localID"].Value;
-            #endregion
-            sendTimer.Interval = sendTimerInterval;
-            listenerToken = new CancellationTokenSource();
-            listener = new TcpListener(IPAddress.Any, port);
+            if (!LoadConfigInternal()) return false;
+
+            _sendBuffer = new List<Tuple<string, byte[]>>();
+            _pipes = new Dictionary<string, TcpPartner>();
+            _listener = new TcpListener(IPAddress.Any, _configuration.Port);
+            _cancelToken = new CancellationTokenSource();
+            _sendTimer = new Timer(_configuration.FlushInterval);
+            _sendTimer.Elapsed += SendHanler;
             return true;
-        }
-
-        private async void sendData(object sender, ElapsedEventArgs e)
-        {
-            ToSend[] sendData;
-            lock (bufferLock)
-            {
-                sendData = outputBuffer.ToArray();
-                outputBuffer.Clear();
-            }
-            var sendTasks = sendData.GroupBy(a => a.partner).Select(
-                a =>
-                {
-                    var _a = a.Select(b => b.data).ToArray();
-                    return SendToClient(_a, a.Key);
-                }).ToArray();
-            await Task.WhenAll(sendTasks);
-        }
-
-        private async Task SendToClient(IEnumerable<byte[]> toSends, string key)
-        {
-            try
-            {
-                var sendStream = connections[key].TcpStream;
-                foreach (var t in toSends)
-                {
-                    var bs = BitConverter.GetBytes(t.Length);
-                    await sendStream.WriteAsync(bs, 0, bs.Length);
-                    await sendStream.WriteAsync(t, 0, t.Length);
-                }
-                await sendStream.FlushAsync();
-            }
-            catch (Exception ex)
-            {
-                ErrorHandler(ex);
-            }
-        }
-
-        private void ErrorHandler(Exception exception)
-        {
-            throw new NotImplementedException();
         }
 
         public bool Start()
         {
-            listener.Start();
+            _listener.Start();
             Listener();
-            sendTimer.Start();
+            _sendTimer.Start();
             return true;
         }
 
@@ -116,155 +64,289 @@ namespace Smarthouse
             throw new NotImplementedException();
         }
 
-        public bool ConnectTo(EndPoint partnerUri, Crypt crypt, out string partnerId)
+        public bool Die()
         {
-            partnerId = null;
-            Thread.Sleep(new Random().Next(0, 10));//todo fix!!!!! Was a problem because 2 network devices started same time and first one had no time to add new connection
-            TcpClient _tcpClient = new TcpClient(); //new IPEndPoint(localIP, port) - binding TcpClient to local ip/port
-            try
-            {
-                _tcpClient.Connect((IPEndPoint)partnerUri);
-            }
-            catch (SocketException)
-            {
-                _tcpClient.Close();
-
-                return false; //refused connection
-            }
-            string cryptName = crypt == null ? "" : crypt.Description["name"];
-            string cryptModuleName;
-            var stream = PrepareStream(_tcpClient);
-            AuthClient(stream, localID, cryptName);
-            AuthServer(stream, out cryptModuleName, out partnerId);
-            return cryptModuleName == cryptName;
-        }
-        private async Task Listener()
-        {
-            var token = listenerToken.Token;
-            while (!token.IsCancellationRequested)
-            {
-                var client = await listener.AcceptTcpClientAsync();
-                ProcessNewConnection(client, token);
-            }
-        }
-
-        private async void ProcessNewConnection(TcpClient client, CancellationToken token)
-        {
-            using (client)
-            using (var stream = PrepareStream(client))
-            {
-                string remoteId = null;
-                try
-                {
-                    string cryptModuleName;
-                    if (!AuthServer(stream, out cryptModuleName, out remoteId)) return;
-                    AuthClient(stream, localID, cryptModuleName);
-                    await ProcessClient(stream, remoteId, token);
-                }
-                finally
-                {
-                    if (remoteId != null) connections.Remove(remoteId);
-                }
-            }
-        }
-
-        private async Task ProcessClient(Stream stream, string remoteId, CancellationToken token)
-        {
-            while (!token.IsCancellationRequested)
-            {
-
-                byte[] lengthArr = new byte[sizeof(int)];
-                stream.Read(lengthArr, 0, sizeof(int));
-                var length = BitConverter.ToInt32(lengthArr, 0);
-                if (length < 0) continue;
-                var buf = new byte[length];
-                int cnt = 0;
-                do
-                {
-                    cnt += await stream.ReadAsync(buf, cnt, length - cnt, token);
-                } while (cnt < length && !token.IsCancellationRequested);
-                await ProcessData(buf, remoteId, stream);
-            }
-        }
-
-        private async Task ProcessData(byte[] buff, string remoteId, Stream stream)
-        {
-            Console.WriteLine("Recieved " + buff.Length + " from " + remoteId);
-        }
-
-        private Stream PrepareStream(TcpClient client)
-        {
-            return client.GetStream();
-        }
-
-        public bool AuthServer(Stream newPartner, out string cryptModuleName, out string remoteId)
-        {
-            byte[] lengths = new byte[2]; //length of first 
-            newPartner.Read(lengths, 0, lengths.Length);
-            byte[] data = new byte[lengths[0] + lengths[1]]; //data
-            newPartner.Read(data, 0, data.Length);
-            byte[] remoteIdArr = new byte[lengths[0]];
-            byte[] cryptModuleArr = new byte[lengths[1]];
-            Array.Copy(data, remoteIdArr, remoteIdArr.Length);
-            Array.Copy(data, cryptModuleArr, cryptModuleArr.Length);
-            remoteId = Encoding.UTF8.GetString(remoteIdArr);
-            string cryptModule = Encoding.UTF8.GetString(cryptModuleArr);
-            cryptModuleName = cryptModule;//returning recieved module name.
-            if (cryptModule != string.Empty && !Smarthouse.moduleManager.ContainsModule(cryptModule))  //if string.Empty it means that no crypt used
-                return false;
-            connections.Add(remoteId, new TcpPartner(newPartner, anonymous, cryptModule));//adding new connection
-            Console.WriteLine("Connection from " + remoteId + "//" + Description["name"]);
+            _sendTimer.Stop();
+            _listener.Stop();
+            _cancelToken.Cancel();
             return true;
         }
-        public void AuthClient(Stream newPartner, string localId, string cryptModule)
+
+        private bool AuthServer(Stream newPartner, out string cryptModuleName, out string remoteId)
         {
-            byte[] remoteIdArr = Encoding.UTF8.GetBytes(localId);
-            byte[] cryptoModuleArr = Encoding.UTF8.GetBytes(cryptModule);
-            byte[] lengths = new byte[2]; //length of first
-
-            lengths[0] = checked((byte)remoteIdArr.Length);//remoteId must be less than 255 bytes
-            lengths[1] = checked((byte)cryptoModuleArr.Length);//cryptoModule must be less than 255 bytes
-
-            newPartner.Write(lengths, 0, lengths.Length);//sending length
-            newPartner.Write(remoteIdArr, 0, remoteIdArr.Length);//sending data
-            newPartner.Write(cryptoModuleArr, 0, cryptoModuleArr.Length);//sending data
+            var wstream = new BinaryReader(newPartner);
+            var cryptNameLength = wstream.ReadByte();
+            var idLength = wstream.ReadByte();
+            cryptModuleName = Encoding.UTF8.GetString(wstream.ReadBytes(cryptNameLength));
+            remoteId = Encoding.UTF8.GetString(wstream.ReadBytes(idLength));
+            return String.IsNullOrEmpty(cryptModuleName) || Smarthouse.moduleManager.ContainsModule(cryptModuleName);
         }
 
-        private void Sender()
+        private void AuthClient(Stream newPartner, string localId, string cryptModule)
         {
-            do
+            var remoteIdArr = Encoding.UTF8.GetBytes(localId);
+            var cryptoModuleArr = Encoding.UTF8.GetBytes(cryptModule);
+
+            var wstream = new BinaryWriter(newPartner);
+            wstream.Write(checked((byte)cryptoModuleArr.Length)); //cryptoModule must be less than 255 bytes
+            wstream.Write(checked((byte)remoteIdArr.Length)); //remoteId must be less than 255 bytes
+            newPartner.Write(cryptoModuleArr, 0, cryptoModuleArr.Length); //sending data
+            newPartner.Write(remoteIdArr, 0, remoteIdArr.Length); //sending data
+
+        }
+
+        public bool ConnectTo(EndPoint partnerUri, Crypt crypt, out string partnerId)
+        {
+            bool pipeOk = false;
+            TcpClient tc = null;
+            partnerId = null;
+            try
             {
-                for (int i = outputBuffer.Count - 1; i >= 0; i--)
-                {
-                    var toSend = outputBuffer[i];
-                    if (toSend == null)//sometimes occures. Was detected on 1 mb datas every millisecond
-                        break;
-                    byte[] sizeArr = BitConverter.GetBytes(toSend.data.Length);//4 bytes for int
-                    var start = DateTime.Now; //todo debug
-                    var partnerStream = connections[toSend.partner].TcpStream;
-                    partnerStream.BeginWrite(sizeArr, 0, sizeArr.Length, null, null);
-                    partnerStream.BeginWrite(toSend.data, 0, toSend.data.Length, null, null);
-                    outputBuffer.RemoveAt(i);
-                    Console.WriteLine("Time: " + (DateTime.Now - start).Milliseconds + ". To send: " + outputBuffer.Count); //todo debug
-                }
-            } while (true);
+                tc = new TcpClient();
+                tc.Connect((IPEndPoint)partnerUri);
+                pipeOk = ClientProcessPipe(tc, crypt, out partnerId);
+            }
+            catch { }
+            finally
+            {
+                if (tc != null)
+                    tc.Close();
+            }
+            return pipeOk;
         }
 
         public bool SendTo(string partnerId, byte[] data)
         {
-            if (!connections.ContainsKey(partnerId)) return false;//no such connection or it's not availiable
-            lock (bufferLock)
-            {
-                outputBuffer.Add(new ToSend(partnerId, data));
-            }
+            if (!_pipes.ContainsKey(partnerId)) return false;//no such connection or it's not availiable
+            lock (_sendBufferLocker) { _sendBuffer.Add(new Tuple<string, byte[]>(partnerId, data)); }
             return true;
         }
+        #endregion
 
-        public bool Die()
+        private async Task Listener()
         {
-            listenerToken.Cancel();
-            sendTimer.Stop();
-            return true;
+            while (true)
+                ServerProcessPipe(await _listener.AcceptTcpClientAsync());
+        }
+
+        private bool LoadConfigInternal()
+        {
+            try
+            {
+                var cfg = new NetworkConfig();
+                int tmp;
+                if (!int.TryParse(Cfg["listener"].Attributes["port"].Value, out tmp))
+                    return false;
+                cfg.Port = tmp;
+                if (!int.TryParse(Cfg["sender"].Attributes["sendTimer"].Value, out tmp))
+                    return false;
+                cfg.FlushInterval = tmp;
+                cfg.LocalId = Cfg["host"].Attributes["localID"].Value;
+                _configuration = cfg;
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        #region Pipe management
+
+        /// <summary>
+        ///     Add new pipe
+        /// </summary>
+        /// <param name="remoteId">Pipe id</param>
+        /// <param name="cryptName">Cryptomodule name</param>
+        /// <param name="stream">Pipe stream</param>
+        protected void AddPipe(string remoteId, string cryptName, Stream stream)
+        {
+            if (String.IsNullOrEmpty(remoteId))
+                throw new ArgumentNullException("remoteId");
+            var partner = new TcpPartner(stream, AnonymousName, cryptName);
+            lock (_pipesLocker)
+            {
+                _pipes.Add(remoteId, partner);
+            }
+            ReadClient(partner, remoteId);
+        }
+
+        /// <summary>
+        ///     Get wrapped stream for client
+        /// </summary>
+        /// <param name="client">Client</param>
+        /// <returns>Wrapped stream</returns>
+        private Stream GetPipeStream(TcpClient client)
+        {
+            //var stream = new BufferedStream(client.GetStream(), 65536);
+            //return stream;
+            return client.GetStream();
+        }
+
+        /// <summary>
+        ///     Process new pipe
+        /// </summary>
+        /// <param name="client">TcpClient to partner</param>
+        private void ServerProcessPipe(TcpClient client)
+        {
+            var stream = GetPipeStream(client);
+            string remoteId = null;
+            var pipeOk = false;
+            try
+            {
+                string cryptname;
+                if (!AuthServer(stream, out cryptname, out remoteId)) return;
+                AuthClient(stream, _configuration.LocalId, cryptname);
+                AddPipe(remoteId, cryptname, stream);
+                pipeOk = true;
+            }
+            finally
+            {
+                if (!pipeOk)
+                    RemovePipe(remoteId);
+            }
+        }
+
+
+        private bool ClientProcessPipe(TcpClient tc, Crypt crypt, out string partnerId)
+        {
+            var stream = GetPipeStream(tc);
+            partnerId = null;
+            var pipeOk = false;
+            try
+            {
+                string cryptname2;
+                var cryptname1 = crypt == null ? "" : crypt.Description["name"]; ;
+
+                AuthClient(stream, _configuration.LocalId, cryptname1);
+                if (!AuthServer(stream, out cryptname2, out partnerId)) return false;
+
+                if (cryptname1 != cryptname2) return false;
+                AddPipe(partnerId, cryptname1, stream);
+                pipeOk = true;
+            }
+            finally
+            {
+                if (!pipeOk)
+                    RemovePipe(partnerId);
+            }
+            return pipeOk;
+        }
+        /// <summary>
+        ///     Remove & dispose pipe
+        /// </summary>
+        /// <param name="remoteId"></param>
+        protected void RemovePipe(string remoteId)
+        {
+            if (String.IsNullOrEmpty(remoteId)) return;
+            lock (_pipesLocker)
+            {
+                TcpPartner cs;
+                if (!_pipes.TryGetValue(remoteId, out cs)) return;
+                if (cs != null && cs.TcpStream != null)
+                {
+                    try
+                    {
+                        cs.Dispose();
+                    }
+                    catch { }
+                }
+                _pipes.Remove(remoteId);
+            }
+        }
+
+        #endregion
+
+        #region IO
+        private async void SendHanler(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            Tuple<string, byte[]>[] sendData;
+            lock (_pipesLocker)
+            {
+                sendData = _sendBuffer.ToArray();
+                _sendBuffer.Clear();
+            }
+            var sendTasks = sendData
+                .GroupBy(a => a.Item1)
+                .Select(a => SendToClient(a.Select(b => b.Item2).ToArray(), a.Key))
+                .ToArray();
+            await Task.WhenAll(sendTasks);
+        }
+
+        private async Task SendToClient(IEnumerable<byte[]> toSends, string key)
+        {
+            bool entered = false;
+            TcpPartner trg = null;
+            var token = _cancelToken.Token;
+            try
+            {
+                trg = _pipes[key];
+                var sendStream = trg.TcpStream;
+                await trg.SendSemaphore.WaitAsync(token);
+                entered = true;
+                foreach (var t in toSends)
+                {
+                    if (token.IsCancellationRequested) return;
+                    var bs = BitConverter.GetBytes(t.Length);
+                    await sendStream.WriteAsync(bs, 0, bs.Length, token);
+                    await sendStream.WriteAsync(t, 0, t.Length, token);
+                }
+                await sendStream.FlushAsync(token);
+            }
+            catch (Exception ex)
+            {
+                ErrorHandler(ex);
+            }
+            finally
+            {
+                if (entered && trg != null)
+                    trg.SendSemaphore.Release();
+            }
+        }
+
+        private async Task ReadClient(TcpPartner partner, string remoteId)
+        {
+            var token = _cancelToken.Token;
+            var stream = partner.TcpStream;
+            var wstream = new BinaryReader(stream);
+            try
+            {
+                while (token.IsCancellationRequested && !partner.Disposed)
+                {
+                    var length = wstream.ReadInt32();
+                    if (length >= 0)
+                    {
+                        var buf = new byte[length];
+                        int cnt = 0;
+                        do
+                        {
+                            cnt += await stream.ReadAsync(buf, cnt, length - cnt, token);
+                        } while (cnt < length && !token.IsCancellationRequested);
+                        await ProcessData(buf, remoteId, stream);
+                    }
+                    await Task.Delay(_configuration.FlushInterval, token);
+                }
+            }
+            catch { }
+        }
+
+        private Task ProcessData(byte[] buf, string remoteId, Stream stream)
+        {
+            throw new NotImplementedException();
+        }
+        #endregion
+        private void ErrorHandler(Exception exception)
+        {
+            throw new NotImplementedException();
+            //{"Если базовый поток недоступен для поиска, запись в объект BufferedStream будет невозможна, "
+            // + "пока буфер чтения не станет пустым. Убедитесь, что поток, базовый для объекта BufferedStream, "
+            // + "доступен для поиска, или не выполняйте чередующиеся операции записи и чтения в этом объекте."}
+        }
+        private class NetworkConfig
+        {
+            internal int Port { get; set; }
+            internal int FlushInterval { get; set; }
+            internal string LocalId { get; set; }
         }
     }
 }

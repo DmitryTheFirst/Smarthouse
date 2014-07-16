@@ -15,7 +15,7 @@ namespace Smarthouse
         #region required for stub
         EndPoint RealIp { get; set; }//ip:port of location of real module
         string StubCryptModuleName { get; set; }//Encryption module if it's not @safe to work" network
-        INetwork UsingNetwork { get; set; }//network that stub will use to redirect command
+        TcpNetwork UsingNetwork { get; set; }//network that stub will use to redirect command
         string PartnerNetworkId { get; set; }//id of partner for this module(uniq, like realIp)
         #endregion
 
