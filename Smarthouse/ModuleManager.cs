@@ -142,7 +142,7 @@ namespace Smarthouse
             return pluginSection.ChildNodes.Count == modules.Count;//read modules == now loaded
         }
 
-        public bool LoadAllStubs(string config, )
+        public bool LoadAllStubs(string config)
         {
             
         }
