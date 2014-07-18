@@ -16,12 +16,14 @@ namespace Smarthouse
         List<IModule> modules;
         private string pluginsConfigPath;
         private List<RemoteSmarthouse> smarthouses;
+        private XDocument smarthouseConfig;
         public bool LoadAllModules(string configPath)
         {
             pluginsConfigPath = configPath;
             modules = new List<IModule>();
             var pluginsConfig = new XmlDocument();
             pluginsConfig.Load(pluginsConfigPath);
+            
             #region Get moduleManager configs
             var modulManagerConfig = pluginsConfig.SelectSingleNode("/config/moduleManager");//getting plugins section
             smarthouses = new List<RemoteSmarthouse>();
@@ -78,8 +80,8 @@ namespace Smarthouse
             if (smarthouses.Count > 0)
             {
                 #region Prepare xml to send
-                var smarthouseConfig = new XDocument(
-                    new XElement("plugins", modules.Select(a =>
+                smarthouseConfig = new XDocument(
+                    new XElement("plugins", modules.Where( a=>!a.Stub ).Select(a =>
                             new XElement("module",
                                 new XAttribute("className", a.GetType()),
                                 new XElement("description", a.Description.Select(desc =>
@@ -107,15 +109,20 @@ namespace Smarthouse
                     try
                     {
                         client.Connect(smarthouse.IP.ToString(), smarthouse.Port);//Connected to the server. 
+                        Console.WriteLine("+\t Connected to " + client.Client.RemoteEndPoint);
                         #region Exchange configs
-                        SendConfig(client, smarthouseConfig.ToString());
-                        string recievedConfig = RecieveConfig(client);
+                        string recievedConfig;
+                        using (NetworkStream cfgExchangeStream = client.GetStream())
+                        {
+                            SendConfig(cfgExchangeStream, smarthouseConfig.ToString());
+                            recievedConfig = RecieveConfig(cfgExchangeStream);
+                        }
+                        Console.WriteLine(recievedConfig);
                         #endregion
-
                     }
-                    catch (SocketException)
+                    catch (SocketException se)
                     {
-                        Console.WriteLine("-\t" + smarthouse.IP.ToString() + " is not alive!");
+                        Console.WriteLine("-\t" + smarthouse.IP.ToString() + " is not alive! " + se.Message);
                     }
                 }
                 #endregion
@@ -135,29 +142,25 @@ namespace Smarthouse
             return pluginSection.ChildNodes.Count == modules.Count;//read modules == now loaded
         }
 
-        private string RecieveConfig(TcpClient client)
+        public bool LoadAllStubs(string config, )
         {
-            using (Stream cfgExchangeStream = client.GetStream())
-            {
-                byte[] sizeBytes = new byte[sizeof(int)];
-                cfgExchangeStream.Read(sizeBytes, 0, sizeof(int));
-                byte[] cfgBytes = new byte[BitConverter.ToInt32(sizeBytes, 0)];//bytes count == bytes in int (usually 4)
-                cfgExchangeStream.Read(cfgBytes, 0, cfgBytes.Length);
-                return Encoding.UTF8.GetString(cfgBytes);
-            }
+            
         }
-
-        private void SendConfig(TcpClient client, string config)
+        private string RecieveConfig(NetworkStream cfgExchangeStream)
         {
-            using (Stream cfgExchangeStream = client.GetStream())
-            {
-                byte[] cfgBytes = Encoding.UTF8.GetBytes(config);
-                byte[] sizeBytes = BitConverter.GetBytes(cfgBytes.Length);//bytes count == bytes in int (usually 4)
-                cfgExchangeStream.Write(sizeBytes, 0, sizeBytes.Length);
-                cfgExchangeStream.Write(cfgBytes, 0, cfgBytes.Length);
-            }
+            byte[] sizeBytes = new byte[sizeof(int)];
+            cfgExchangeStream.Read(sizeBytes, 0, sizeof(int));
+            byte[] cfgBytes = new byte[BitConverter.ToInt32(sizeBytes, 0)];//bytes count == bytes in int (usually 4)
+            cfgExchangeStream.Read(cfgBytes, 0, cfgBytes.Length);
+            return Encoding.UTF8.GetString(cfgBytes);
         }
-
+        private void SendConfig(NetworkStream cfgExchangeStream, string config)
+        {
+            byte[] cfgBytes = Encoding.UTF8.GetBytes(config);
+            byte[] sizeBytes = BitConverter.GetBytes(cfgBytes.Length);//bytes count == bytes in int (usually 4)
+            cfgExchangeStream.Write(sizeBytes, 0, sizeBytes.Length);
+            cfgExchangeStream.Write(cfgBytes, 0, cfgBytes.Length);
+        }
         void AcceptSmarthouse(object listenerPort)
         {
             TcpListener listener = new TcpListener(IPAddress.Any, (int)listenerPort); //listener for all smarthouses
@@ -166,9 +169,16 @@ namespace Smarthouse
             {
                 TcpClient client = listener.AcceptTcpClient();
                 Console.WriteLine("+\t" + client.Client.RemoteEndPoint + " just connected");
+                #region Exchange configs
+                using (NetworkStream cfgExchangeStream = client.GetStream())
+                {
+                    string recievedConfig = RecieveConfig(cfgExchangeStream);
+                    SendConfig(cfgExchangeStream, smarthouseConfig.ToString());
+                    Console.WriteLine(recievedConfig);
+                }
+                #endregion
             } while (true);
         }
-
         public bool LoadModule(string strongName, XmlNode cfg, Dictionary<string, string> description)
         {
             if (cfg == null) //checking cfg existance
@@ -216,12 +226,10 @@ namespace Smarthouse
             }
             return success;
         }
-
         public IModule FindModule(string key, string value)
         {
             return modules.FirstOrDefault(a => a.Description.ContainsKey(key) && a.Description[key] == value);
         }
-
         public bool ContainsModule(string moduleName)
         {
             return modules.Any(a => a.Description["name"] == moduleName);

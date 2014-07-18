@@ -74,7 +74,8 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Configs\addConfig.xml" />
+    <Content Include="Configs\Config1.xml" />
+    <Content Include="Configs\Config2.xml" />
     <Content Include="Configs\plugins.xml" />
   </ItemGroup>
   <ItemGroup />

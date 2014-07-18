@@ -4,18 +4,18 @@
     <listener port="1111"/>
     <client timeoutSecs="2"/>
     <smarthouses>
-      <smarthouse ip="192.168.0.6" port="1111"/> 
-	   <smarthouse ip="192.168.0.8" port="1111"/> 
+      <smarthouse ip="192.168.0.100" port="1111"/>
+	  <smarthouse ip="192.168.0.8" port="1111"/>
     </smarthouses>
   </moduleManager>
-  
+ 
   <plugins>
     <plugin className="Smarthouse.Test">
       <description>
         <desc name="name" value="Test"/>
       </description>
       <moduleConfig>
-        <netCfg ip="192.168.0.100"/>
+        <netCfg ip="192.168.0.6"/>
       </moduleConfig>
     </plugin>
   </plugins>

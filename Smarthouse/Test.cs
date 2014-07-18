@@ -31,13 +31,13 @@ namespace Smarthouse
         private TcpNetwork NetworkAdditional2;
         public bool Start()
         {
-            NetworkMain = (TcpNetwork)Smarthouse.moduleManager.FindModule("name", "NetworkMain");
-            NetworkAdditional1 = (TcpNetwork)Smarthouse.moduleManager.FindModule("name", "NetworkAdditional1");
-            NetworkAdditional2 = (TcpNetwork)Smarthouse.moduleManager.FindModule("name", "NetworkAdditional2");
+            //NetworkMain = (TcpNetwork)Smarthouse.moduleManager.FindModule("name", "NetworkMain");
+            //NetworkAdditional1 = (TcpNetwork)Smarthouse.moduleManager.FindModule("name", "NetworkAdditional1");
+            //NetworkAdditional2 = (TcpNetwork)Smarthouse.moduleManager.FindModule("name", "NetworkAdditional2");
 
-            Thread t1 = new Thread(Thread1);
-            Thread t2 = new Thread(Thread2);
-            Thread t3 = new Thread(Thread3);
+           // Thread t1 = new Thread(Thread1);
+            //Thread t2 = new Thread(Thread2);
+            //Thread t3 = new Thread(Thread3);
 
             //t1.Start();
             //t2.Start();
