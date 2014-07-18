@@ -1,14 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <config>
   <moduleManager>
-    <listener port="1111"/>
+    <listener port="2222"/>
     <client timeoutSecs="2"/>
     <smarthouses>
-      <smarthouse ip="192.168.0.100" port="1111"/>
+      <smarthouse ip="192.168.0.100" port="2222"/>
     </smarthouses>
   </moduleManager>
   <plugins>
-    <plugin className="Smarthouse.TcpNetwork, Smarthouse, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <plugin className="Smarthouse.TcpNetwork">
       <description>
         <desc name="name" value="NetworkMain"/>
       </description>
@@ -18,7 +18,7 @@
         <sender sendTimer="100"/>
       </moduleConfig>
     </plugin>
-    <plugin className="Smarthouse.TcpNetwork, Smarthouse, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <plugin className="Smarthouse.TcpNetwork">
       <description>
         <desc name="name" value="NetworkAdditional1"/>
       </description>
@@ -28,7 +28,7 @@
         <sender sendTimer="100"/>
       </moduleConfig>
     </plugin>
-    <plugin className="Smarthouse.TcpNetwork, Smarthouse, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <plugin className="Smarthouse.TcpNetwork">
       <description>
         <desc name="name" value="NetworkAdditional2"/>
       </description>
@@ -38,7 +38,7 @@
         <sender sendTimer="100"/>
       </moduleConfig>
     </plugin>
-    <plugin className="Smarthouse.Test, Smarthouse, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <plugin className="Smarthouse.Test">
       <description>
         <desc name="name" value="Test"/>
       </description>

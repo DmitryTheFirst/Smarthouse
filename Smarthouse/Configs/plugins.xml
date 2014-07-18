@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <config>
   <moduleManager>
-    <listener port="1111"/>
+    <listener port="2222"/>
     <client timeoutSecs="2"/>
     <smarthouses>
-      <smarthouse ip="192.168.0.6" port="1111"/> 
+      <smarthouse ip="192.168.0.6" port="2222"/> 
     </smarthouses>
   </moduleManager>
   <plugins>
@@ -21,6 +21,8 @@
     <plugin className="Smarthouse.TcpNetwork, Smarthouse, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
       <description>
         <desc name="name" value="NetworkAdditional1"/>
+        <desc name="name1" value="NetworkAdditional1"/>
+        <desc name="name2" value="NetworkAdditional1"/>
       </description>
       <moduleConfig>
         <host localID="NetworkAdditional1"/>

@@ -39,9 +39,9 @@ namespace Smarthouse
             Thread t2 = new Thread(Thread2);
             Thread t3 = new Thread(Thread3);
 
-            t1.Start();
-            t2.Start();
-            t3.Start();
+            //t1.Start();
+            //t2.Start();
+            //t3.Start();
             return true;
         }
 

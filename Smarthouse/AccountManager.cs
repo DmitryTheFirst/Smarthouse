@@ -104,7 +104,7 @@ namespace Smarthouse
             throw new NotImplementedException();
         }
 
-        public void ExecSerializedCommand( string user, byte[] data )
+        public void ExecSerializedCommand(string user, byte[] data)
         {
             throw new NotImplementedException();
         }
