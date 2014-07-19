@@ -2,15 +2,15 @@
 {
     static class Smarthouse
     {
-        public static ModuleManager moduleManager;
-        
+        public static ModuleManager ModuleManager;
+
         public static void StartSmarthouse(string moduleManagerConfigPath)
         {
-            moduleManager = new ModuleManager();
-            moduleManager.LoadAllModules(moduleManagerConfigPath);
+            ModuleManager = new ModuleManager();
+            ModuleManager.LoadAllModules(moduleManagerConfigPath);
         }
 
-        
+
 
     }
 }

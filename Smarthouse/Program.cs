@@ -8,8 +8,6 @@ namespace Smarthouse
         {
             Console.WriteLine("Hello world!");
             Smarthouse.StartSmarthouse(args[0]);
-
-            Console.ReadKey();
         }
     }
 

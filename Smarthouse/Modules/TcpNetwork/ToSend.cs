@@ -1,4 +1,5 @@
-﻿namespace Smarthouse {
+﻿namespace Smarthouse.Modules.TcpNetwork
+{
     internal class ToSend
     {
         public ToSend(string partner, byte[] data)

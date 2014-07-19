@@ -59,6 +59,7 @@
     <Compile Include="Modules\Hardware\Hardware.cs" />
     <Compile Include="Modules\IModule.cs" />
     <Compile Include="Modules\ModuleManager.cs" />
+    <Compile Include="Modules\Terminal\ITerminal.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Smarthouse.cs" />
