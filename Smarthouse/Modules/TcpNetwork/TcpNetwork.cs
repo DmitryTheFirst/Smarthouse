@@ -12,7 +12,7 @@ using Timer = System.Timers.Timer;
 
 namespace Smarthouse
 {
-    public class TcpNetwork : INetwork
+    public class TcpNetwork
     {
         #region IModule
         public Dictionary<string, string> Description { get; set; }

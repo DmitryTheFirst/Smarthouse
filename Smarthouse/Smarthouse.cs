@@ -4,8 +4,6 @@
     {
         public static ModuleManager moduleManager;
         
-
-        
         public static void StartSmarthouse(string moduleManagerConfigPath)
         {
             moduleManager = new ModuleManager();

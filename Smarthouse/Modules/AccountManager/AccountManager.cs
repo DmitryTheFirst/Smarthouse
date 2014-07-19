@@ -4,7 +4,7 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Xml;
 
-namespace Smarthouse
+namespace Smarthouse.Modules
 {
     class AccountManager : IModule
     {

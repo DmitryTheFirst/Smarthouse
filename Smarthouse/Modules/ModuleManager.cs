@@ -23,7 +23,7 @@ namespace Smarthouse
             modules = new List<IModule>();
             var pluginsConfig = new XmlDocument();
             pluginsConfig.Load(pluginsConfigPath);
-            
+
             #region Get moduleManager configs
             var modulManagerConfig = pluginsConfig.SelectSingleNode("/config/moduleManager");//getting plugins section
             smarthouses = new List<RemoteSmarthouse>();
@@ -81,7 +81,7 @@ namespace Smarthouse
             {
                 #region Prepare xml to send
                 smarthouseConfig = new XDocument(
-                    new XElement("plugins", modules.Where( a=>!a.Stub ).Select(a =>
+                    new XElement("plugins", modules.Select(a =>
                             new XElement("module",
                                 new XAttribute("className", a.GetType()),
                                 new XElement("description", a.Description.Select(desc =>
@@ -142,10 +142,10 @@ namespace Smarthouse
             return pluginSection.ChildNodes.Count == modules.Count;//read modules == now loaded
         }
 
-        public bool LoadAllStubs(string config)
-        {
-            
-        }
+        //public bool LoadAllStubs(string config)
+        //{
+
+        //}
         private string RecieveConfig(NetworkStream cfgExchangeStream)
         {
             byte[] sizeBytes = new byte[sizeof(int)];

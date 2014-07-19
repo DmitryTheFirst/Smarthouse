@@ -1,17 +1,13 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Net;
 using System.Xml;
 
 namespace Smarthouse
 {
-    public class Crypt : IModule, ICrypt
+    public class Crypt : IModule
     {
         public Dictionary<string, string> Description { get; set; }
         public XmlNode Cfg { get; set; }
-        public Dictionary<string, Func<byte[]>> MethodResolver { get; set; }
-        public bool Stub { get; set; }
-
         public bool Init()
         {
             throw new NotImplementedException();
@@ -22,16 +18,7 @@ namespace Smarthouse
             throw new NotImplementedException();
         }
 
-        public void ExecSerializedCommand( string user, byte[] data )
-        {
-            throw new NotImplementedException();
-        }
-
         public bool Die()
-        {
-            throw new NotImplementedException();
-        }
-        public bool ExecString()
         {
             throw new NotImplementedException();
         }

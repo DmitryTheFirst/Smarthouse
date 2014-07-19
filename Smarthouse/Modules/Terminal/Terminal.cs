@@ -62,6 +62,14 @@ namespace Smarthouse
 
         public bool Login()
         {
+            if ( this.Stub )
+            {
+                //wcf resend command
+            }
+            else
+            {
+                
+            }
             throw new NotImplementedException();
         }
 

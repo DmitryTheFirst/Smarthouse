@@ -2,15 +2,19 @@
 using System.IO;
 using System.Threading;
 
-namespace Smarthouse {
-    internal class TcpPartner:IDisposable {
-        public TcpPartner(Stream partnerStream, string username, string CryptName) {
-            SendSemaphore = new SemaphoreSlim( 1 );
-            ReadSemaphore = new SemaphoreSlim( 1 );
+namespace Smarthouse
+{
+    internal class TcpPartner : IDisposable
+    {
+        public TcpPartner(Stream partnerStream, string username, string CryptName)
+        {
+            SendSemaphore = new SemaphoreSlim(1);
+            ReadSemaphore = new SemaphoreSlim(1);
             TcpStream = partnerStream;
             Username = username;
             if (!String.IsNullOrWhiteSpace(CryptName))
                 Crypt = (Crypt)Smarthouse.moduleManager.FindModule("name", CryptName);
+
         }
 
         public Stream TcpStream { get; set; }
@@ -21,14 +25,16 @@ namespace Smarthouse {
         public readonly SemaphoreSlim ReadSemaphore;
         public bool Disposed { get; protected set; }
 
-        public void Dispose() {
-            if ( Disposed ) return;
+        public void Dispose()
+        {
+            if (Disposed) return;
             Disposed = true;
             SendSemaphore.Dispose();
             ReadSemaphore.Dispose();
         }
 
-        ~TcpPartner() {
+        ~TcpPartner()
+        {
             Dispose();
         }
     }
