@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using Timer = System.Timers.Timer;
 
-namespace Smarthouse
+namespace Smarthouse.Modules.TcpNetwork
 {
     public class TcpNetwork
     {
@@ -75,7 +75,7 @@ namespace Smarthouse
             var idLength = wstream.ReadByte();
             cryptModuleName = Encoding.UTF8.GetString(wstream.ReadBytes(cryptNameLength));
             remoteId = Encoding.UTF8.GetString(wstream.ReadBytes(idLength));
-            return String.IsNullOrEmpty(cryptModuleName) || Smarthouse.moduleManager.ContainsModule(cryptModuleName);
+            return String.IsNullOrEmpty(cryptModuleName) || Smarthouse.ModuleManager.ContainsModule(cryptModuleName);
         }
 
         private void AuthClient(Stream newPartner, string localId, string cryptModule)
@@ -91,7 +91,7 @@ namespace Smarthouse
 
         }
 
-        public bool ConnectTo(EndPoint partnerUri, Crypt crypt, out string partnerId)
+        public bool ConnectTo(EndPoint partnerUri, Crypt.Crypt crypt, out string partnerId)
         {
             bool pipeOk = false;
             TcpClient tc = null;
@@ -204,7 +204,7 @@ namespace Smarthouse
         }
 
 
-        private bool ClientProcessPipe(TcpClient tc, Crypt crypt, out string partnerId)
+        private bool ClientProcessPipe(TcpClient tc, Crypt.Crypt crypt, out string partnerId)
         {
             var stream = GetPipeStream(tc);
             partnerId = null;

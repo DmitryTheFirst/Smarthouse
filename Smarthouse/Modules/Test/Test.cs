@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.Xml;
+using Smarthouse.Modules.TcpNetwork;
 
 namespace Smarthouse
 {

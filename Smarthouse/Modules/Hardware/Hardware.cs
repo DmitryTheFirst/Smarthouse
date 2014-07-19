@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Net;
 using System.Threading;
 using System.Xml;
 using Raspberry.IO.GeneralPurpose;
 
-namespace Smarthouse
+namespace Smarthouse.Modules.Hardware
 {
     class Hardware : IModule
     {

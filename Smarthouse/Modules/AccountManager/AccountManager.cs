@@ -4,7 +4,7 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Xml;
 
-namespace Smarthouse.Modules
+namespace Smarthouse.Modules.AccountManager
 {
     class AccountManager : IModule
     {
@@ -91,7 +91,7 @@ namespace Smarthouse.Modules
         public bool Stub { get; set; }
         public EndPoint RealIp { get; set; }
         public string StubCryptModuleName { get; set; }
-        public TcpNetwork UsingNetwork { get; set; }
+        public TcpNetwork.TcpNetwork UsingNetwork { get; set; }
         public string PartnerNetworkId { get; set; }
 
         public bool Init()

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Xml;
 
-namespace Smarthouse
+namespace Smarthouse.Modules.Crypt
 {
     public class Crypt : IModule
     {

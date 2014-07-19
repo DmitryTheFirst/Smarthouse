@@ -2,7 +2,7 @@
 using System.IO;
 using System.Threading;
 
-namespace Smarthouse
+namespace Smarthouse.Modules.TcpNetwork
 {
     internal class TcpPartner : IDisposable
     {
@@ -13,13 +13,13 @@ namespace Smarthouse
             TcpStream = partnerStream;
             Username = username;
             if (!String.IsNullOrWhiteSpace(CryptName))
-                Crypt = (Crypt)Smarthouse.moduleManager.FindModule("name", CryptName);
+                Crypt = (Crypt.Crypt)Smarthouse.ModuleManager.FindModule("name", CryptName);
 
         }
 
         public Stream TcpStream { get; set; }
         public string Username { get; set; }
-        public Crypt Crypt { get; set; }
+        public Crypt.Crypt Crypt { get; set; }
 
         public readonly SemaphoreSlim SendSemaphore;
         public readonly SemaphoreSlim ReadSemaphore;
