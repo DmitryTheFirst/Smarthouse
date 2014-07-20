@@ -165,46 +165,65 @@ namespace Smarthouse
                 {
                     if (smarthouse.Synchronized)
                         continue; //this was already synchronized
-                    TcpClient client = new TcpClient();
-                    try
+
+                    XmlDocument remoteSmarthouseConfig;
+                    using (TcpClient client = new TcpClient())
                     {
-                        client.Connect(smarthouse.IP.ToString(), smarthouse.Port);//Connected to the server. 
-                        Console.WriteLine("+\t Connected to " + client.Client.RemoteEndPoint);
-
-
-                        #region Exchange configs
-                        string recievedConfig;
-                        using (NetworkStream cfgExchangeStream = client.GetStream())
+                        IAsyncResult ar = client.BeginConnect(smarthouse.IP, smarthouse.Port, null, null);
+                        WaitHandle wh = ar.AsyncWaitHandle;
+                        try
                         {
-                            SendConfig(cfgExchangeStream, smarthouseConfig.ToString());
-                            recievedConfig = RecieveConfig(cfgExchangeStream);
+                            if (!ar.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(connectionTimeout), false))
+                            {
+                                client.Close();
+                                Console.WriteLine(
+                                    smarthouse.IP + " wasn't answering on connection request for " + connectionTimeout + " seconds.");
+                                break;
+                            }
 
+                            client.EndConnect(ar);
+                            Console.WriteLine("+\t Connected to " + client.Client.RemoteEndPoint);
+                            #region Exchange configs
+                            string recievedConfig;
+                            using (NetworkStream cfgExchangeStream = client.GetStream())
+                            {
+                                SendConfig(cfgExchangeStream, smarthouseConfig.ToString());
+                                recievedConfig = RecieveConfig(cfgExchangeStream);
+
+                            }
+                            Console.WriteLine(recievedConfig);
+                            remoteSmarthouseConfig = new XmlDocument();
+                            remoteSmarthouseConfig.LoadXml(recievedConfig);
+                            #endregion
                         }
-                        Console.WriteLine(recievedConfig);
-                        var remoteSmarthouseConfig = new XmlDocument();
-                        remoteSmarthouseConfig.LoadXml(recievedConfig);
-                        #endregion
-                        #region Creating stubs
-                        int remoteWcfPort = int.Parse(remoteSmarthouseConfig.SelectSingleNode("/smarthouse/WCF").Attributes["port"].Value);
-                        var remoteWcfModules = remoteSmarthouseConfig.SelectSingleNode("/smarthouse/plugins");
-                        foreach (XmlElement remoteWcfModule in remoteWcfModules)
+                        catch (SocketException se)
                         {
-                            //var stubName = "Test";
-                            //var stubInterface = Type.GetType(remoteWcfModule.Attributes["className"].Value).GetInterfaces()[2];//FIX!!!
-                            //ChannelFactory<> myChannelFactory = new ChannelFactory<ITest>(new BasicHttpBinding(),
-                            //                        "http://" + smarthouse.IP + ":" + remoteWcfPort + "/" + stubName
-                            //    );
-                            //IModule stub = myChannelFactory.CreateChannel();
-                            //stub.Description=
-                            //modules.Add(stub);
+                            Console.WriteLine("Error connecting " + smarthouse.IP + ':' + smarthouse.Port);
+                        }
+                        finally
+                        {
+                            wh.Close();
                         }
 
-                        #endregion
+
                     }
-                    catch (SocketException se)
-                    {
-                        Console.WriteLine("-\t" + smarthouse.IP + " is not alive! " + se.Message);
-                    }
+                    #region Creating stubs
+                    //int remoteWcfPort = int.Parse(remoteSmarthouseConfig.SelectSingleNode("/smarthouse/WCF").Attributes["port"].Value);
+                    //var remoteWcfModules = remoteSmarthouseConfig.SelectSingleNode("/smarthouse/plugins");
+                    //foreach (XmlElement remoteWcfModule in remoteWcfModules)
+                    //{
+                    //    //var stubName = "Test";
+                    //    //var stubInterface = Type.GetType(remoteWcfModule.Attributes["className"].Value).GetInterfaces()[2];//FIX!!!
+                    //    //ChannelFactory<> myChannelFactory = new ChannelFactory<ITest>(new BasicHttpBinding(),
+                    //    //                        "http://" + smarthouse.IP + ":" + remoteWcfPort + "/" + stubName
+                    //    //    );
+                    //    //IModule stub = myChannelFactory.CreateChannel();
+                    //    //stub.Description=
+                    //    //modules.Add(stub);
+                    //}
+
+                    #endregion
+
                 }
                 #endregion
             }
