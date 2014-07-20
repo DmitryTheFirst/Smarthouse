@@ -11,6 +11,7 @@ using System.Xml.Linq;
 using System.ServiceModel;
 using System.ServiceModel.Description;
 using Smarthouse.Modules;
+using Smarthouse.Modules.Test;
 
 namespace Smarthouse
 {
@@ -53,6 +54,7 @@ namespace Smarthouse
         private XDocument smarthouseConfig;
         public bool LoadAllModules(string configPath)
         {
+            string myIP = System.Net.Dns.GetHostByName(System.Net.Dns.GetHostName()).AddressList[0].ToString();
             pluginsConfigPath = configPath;
             modules = new List<IModule>();
             var pluginsConfig = new XmlDocument();
@@ -60,13 +62,14 @@ namespace Smarthouse
             #region Get moduleManager configs
             var modulManagerConfig = pluginsConfig.SelectSingleNode("/config/moduleManager");//getting plugins section
             smarthouses = new List<RemoteSmarthouse>();
-            var listenerPort = int.Parse(modulManagerConfig.SelectSingleNode("listener").Attributes["port"].Value);
-            var connectionTimeout = int.Parse(modulManagerConfig.SelectSingleNode("client").Attributes["timeoutSecs"].Value);
+            var listenerPort = int.Parse(modulManagerConfig.SelectSingleNode("cfgExchanger").Attributes["port"].Value);
+            var connectionTimeout = int.Parse(modulManagerConfig.SelectSingleNode("cfgExchanger").Attributes["timeoutSecs"].Value);
+            var WCFport = int.Parse(modulManagerConfig.SelectSingleNode("WCF").Attributes["port"].Value);
             var smarthousesSection = modulManagerConfig.SelectSingleNode("smarthouses");
             if (smarthousesSection != null)
             {
                 smarthouses.AddRange(
-                    smarthousesSection.ChildNodes.Cast<XmlElement>()
+                    smarthousesSection.ChildNodes.OfType<XmlElement>().Cast<XmlElement>()
                                       .Select(
                                           smarthouseNode => new RemoteSmarthouse(
                                               IPAddress.Parse(smarthouseNode.Attributes["ip"].Value),
@@ -110,7 +113,6 @@ namespace Smarthouse
             }
             #endregion
             #region Working with stubs
-
             #region Create WCF services
             ServiceMetadataBehavior smb = new ServiceMetadataBehavior
             {
@@ -123,7 +125,7 @@ namespace Smarthouse
             foreach (IRemote module in modules.Where(a => a.GetType().GetInterface("IRemote") != null))
             {
 
-                Uri baseAddress = new Uri("http://" + "localhost" + ":" + 31337 + "/" + ((IModule)module).Description["name"]);
+                Uri baseAddress = new Uri("http://" + myIP + ":" + WCFport + "/" + ((IModule)module).Description["name"]);
                 ServiceHost host = new ServiceHost(module, baseAddress);
                 host.Description.Behaviors.Add(smb);
                 module.WcfHost = host;
@@ -131,11 +133,14 @@ namespace Smarthouse
                 Console.WriteLine("Created service: " + baseAddress.ToString());
             }
             #endregion
-
             if (smarthouses.Count > 0)
             {
                 #region Prepare xml to send
                 smarthouseConfig = new XDocument(
+                    new XElement("smarthouse",
+                        new XElement("WCF",
+                            new XAttribute("port", WCFport)
+                        ),
                     new XElement("plugins", modules.Select(a =>
                             new XElement("module",
                                 new XAttribute("className", a.GetType()),
@@ -150,7 +155,7 @@ namespace Smarthouse
                             )
                    )
                    )
-               );
+               ));
                 #endregion
                 #region Connect to smarthouses and send/recieve config
                 Thread waitSmarthousesConnects = new Thread(AcceptSmarthouse);
@@ -166,21 +171,39 @@ namespace Smarthouse
                         client.Connect(smarthouse.IP.ToString(), smarthouse.Port);//Connected to the server. 
                         Console.WriteLine("+\t Connected to " + client.Client.RemoteEndPoint);
 
-                        string recievedConfig;
-                        #region Exchange configs
 
+                        #region Exchange configs
+                        string recievedConfig;
                         using (NetworkStream cfgExchangeStream = client.GetStream())
                         {
                             SendConfig(cfgExchangeStream, smarthouseConfig.ToString());
                             recievedConfig = RecieveConfig(cfgExchangeStream);
+
                         }
                         Console.WriteLine(recievedConfig);
+                        var remoteSmarthouseConfig = new XmlDocument();
+                        remoteSmarthouseConfig.LoadXml(recievedConfig);
                         #endregion
-                        //CREATE STUBS CLIENTS
+                        #region Creating stubs
+                        int remoteWcfPort = int.Parse(remoteSmarthouseConfig.SelectSingleNode("/smarthouse/WCF").Attributes["port"].Value);
+                        var remoteWcfModules = remoteSmarthouseConfig.SelectSingleNode("/smarthouse/plugins");
+                        foreach (XmlElement remoteWcfModule in remoteWcfModules)
+                        {
+                            //var stubName = "Test";
+                            //var stubInterface = Type.GetType(remoteWcfModule.Attributes["className"].Value).GetInterfaces()[2];//FIX!!!
+                            //ChannelFactory<> myChannelFactory = new ChannelFactory<ITest>(new BasicHttpBinding(),
+                            //                        "http://" + smarthouse.IP + ":" + remoteWcfPort + "/" + stubName
+                            //    );
+                            //IModule stub = myChannelFactory.CreateChannel();
+                            //stub.Description=
+                            //modules.Add(stub);
+                        }
+
+                        #endregion
                     }
                     catch (SocketException se)
                     {
-                        Console.WriteLine("-\t" + smarthouse.IP.ToString() + " is not alive! " + se.Message);
+                        Console.WriteLine("-\t" + smarthouse.IP + " is not alive! " + se.Message);
                     }
                 }
                 #endregion
@@ -200,10 +223,6 @@ namespace Smarthouse
             return pluginSection.ChildNodes.Count == modules.Count;//read modules == now loaded
         }
 
-        //public bool LoadAllStubs(string config)
-        //{
-
-        //}
         private string RecieveConfig(NetworkStream cfgExchangeStream)
         {
             byte[] sizeBytes = new byte[sizeof(int)];

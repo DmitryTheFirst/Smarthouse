@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace Smarthouse.Modules.Test
 {
     [ServiceContract]
-    interface ITest
+    interface ITest:IModule
     {
 
         [OperationContract]

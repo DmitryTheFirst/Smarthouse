@@ -8,7 +8,7 @@ using System.Xml;
 namespace Smarthouse.Modules.AccountManager
 {
     internal class AccountManager : IModule
-    {        
+    {
         public Dictionary<string, string> Description { get; set; }
         public XmlNode Cfg { get; set; }
         private Dictionary<string, User> users;
@@ -62,7 +62,7 @@ namespace Smarthouse.Modules.AccountManager
             return bytes;
         }
 
-     
+
 
 
         public bool Init()
@@ -78,8 +78,8 @@ namespace Smarthouse.Modules.AccountManager
         public bool Die()
         {
             throw new NotImplementedException();
-        }   
-        
+        }
+
         private class User
         {
             public string name;

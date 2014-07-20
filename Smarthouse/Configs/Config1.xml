@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <config>
   <moduleManager>
-    <listener port="1111"/>
-    <client timeoutSecs="2"/>
+    <cfgExchanger port="1111" timeoutSecs="2"/>
+    <WCF port="5402" />
     <smarthouses>
       <smarthouse ip="192.168.0.100" port="1111"/>
 	  <smarthouse ip="192.168.0.8" port="1111"/>
@@ -12,7 +12,7 @@
   <plugins>
     <plugin className="Smarthouse.Test">
       <description>
-        <desc name="name" value="Test"/>
+        <desc name="name" value="Test1"/>
       </description>
       <moduleConfig>
         <netCfg ip="192.168.0.6"/>
