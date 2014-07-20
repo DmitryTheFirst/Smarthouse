@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Xml;
@@ -166,7 +167,7 @@ namespace Smarthouse
                     if (smarthouse.Synchronized)
                         continue; //this was already synchronized
 
-                    XmlDocument remoteSmarthouseConfig;
+                    XmlDocument remoteSmarthouseConfig = new XmlDocument();
                     using (TcpClient client = new TcpClient())
                     {
                         IAsyncResult ar = client.BeginConnect(smarthouse.IP, smarthouse.Port, null, null);
@@ -192,7 +193,6 @@ namespace Smarthouse
 
                             }
                             Console.WriteLine(recievedConfig);
-                            remoteSmarthouseConfig = new XmlDocument();
                             remoteSmarthouseConfig.LoadXml(recievedConfig);
                             #endregion
                         }
@@ -208,19 +208,18 @@ namespace Smarthouse
 
                     }
                     #region Creating stubs
-                    //int remoteWcfPort = int.Parse(remoteSmarthouseConfig.SelectSingleNode("/smarthouse/WCF").Attributes["port"].Value);
-                    //var remoteWcfModules = remoteSmarthouseConfig.SelectSingleNode("/smarthouse/plugins");
-                    //foreach (XmlElement remoteWcfModule in remoteWcfModules)
-                    //{
-                    //    //var stubName = "Test";
-                    //    //var stubInterface = Type.GetType(remoteWcfModule.Attributes["className"].Value).GetInterfaces()[2];//FIX!!!
-                    //    //ChannelFactory<> myChannelFactory = new ChannelFactory<ITest>(new BasicHttpBinding(),
-                    //    //                        "http://" + smarthouse.IP + ":" + remoteWcfPort + "/" + stubName
-                    //    //    );
-                    //    //IModule stub = myChannelFactory.CreateChannel();
-                    //    //stub.Description=
-                    //    //modules.Add(stub);
-                    //}
+                    int remoteWcfPort = int.Parse(remoteSmarthouseConfig.SelectSingleNode("/smarthouse/WCF").Attributes["port"].Value);
+                    var remoteWcfModules = remoteSmarthouseConfig.SelectSingleNode("/smarthouse/plugins");
+                    foreach (XmlElement remoteWcfModule in remoteWcfModules)
+                    {
+                        var stubName = "Test1";
+                        var stubInterface = Type.GetType(remoteWcfModule.Attributes["className"].Value).GetInterfaces()[2];//FIX!!!
+
+                        var stub = (IModule)CreateChannelInfo.MakeGenericMethod(stubInterface).
+                            Invoke(null, new object[] { smarthouse, remoteWcfPort, stubName });
+                        //stub.Description =
+                        modules.Add(stub);
+                    }
 
                     #endregion
 
@@ -240,6 +239,16 @@ namespace Smarthouse
             }
             #endregion
             return pluginSection.ChildNodes.Count == modules.Count;//read modules == now loaded
+        }
+
+        private static MethodInfo CreateChannelInfo = typeof(ModuleManager).GetMethod("CreateChannel", BindingFlags.Static | BindingFlags.NonPublic);
+        private static IModule CreateChannel<T>(RemoteSmarthouse smarthouse, int remoteWcfPort, string stubName) where T : IModule
+        {
+            ChannelFactory<T> myChannelFactory = new ChannelFactory<T>(new BasicHttpBinding(),
+                                    "http://" + smarthouse.IP + ":" + remoteWcfPort + "/" + stubName
+                );
+            T stub = myChannelFactory.CreateChannel();
+            return stub;
         }
 
         private string RecieveConfig(NetworkStream cfgExchangeStream)

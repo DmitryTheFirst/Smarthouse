@@ -10,13 +10,13 @@
   </moduleManager>
   
   <plugins>
-    <!--<plugin className="Smarthouse.Test">
+    <plugin className="Smarthouse.Test">
       <description>
         <desc name="name" value="TestMain"/>
       </description>
       <moduleConfig>
         <netCfg ip="192.168.0.100"/>
       </moduleConfig>
-    </plugin>-->
+    </plugin>
   </plugins>
 </config>
