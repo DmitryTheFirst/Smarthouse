@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ServiceModel;
 using System.Threading;
 using System.Xml;
 using Raspberry.IO.GeneralPurpose;

@@ -8,9 +8,43 @@ using System.Text;
 using System.Threading;
 using System.Xml;
 using System.Xml.Linq;
+using System.ServiceModel;
+using System.ServiceModel.Description;
+using Smarthouse.Modules;
 
 namespace Smarthouse
 {
+
+    class WCFServer
+    {
+        private ServiceHost host;
+        public void Create(IModule module, int port)
+        {
+
+        }
+
+        public bool Open()
+        {
+            try
+            {
+                host.Open();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return false;
+            }
+            return true;
+        }
+
+        public void Close()
+        {
+            host.Close();
+        }
+
+
+    }
+
     class ModuleManager
     {
         List<IModule> modules;
@@ -23,7 +57,6 @@ namespace Smarthouse
             modules = new List<IModule>();
             var pluginsConfig = new XmlDocument();
             pluginsConfig.Load(pluginsConfigPath);
-
             #region Get moduleManager configs
             var modulManagerConfig = pluginsConfig.SelectSingleNode("/config/moduleManager");//getting plugins section
             smarthouses = new List<RemoteSmarthouse>();
@@ -77,6 +110,28 @@ namespace Smarthouse
             }
             #endregion
             #region Working with stubs
+
+            #region Create WCF services
+            ServiceMetadataBehavior smb = new ServiceMetadataBehavior
+            {
+                HttpGetEnabled = true,
+                MetadataExporter =
+                {
+                    PolicyVersion = PolicyVersion.Policy15
+                }
+            };
+            foreach (IRemote module in modules.Where(a => a.GetType().GetInterface("IRemote") != null))
+            {
+
+                Uri baseAddress = new Uri("http://" + "localhost" + ":" + 31337 + "/" + ((IModule)module).Description["name"]);
+                ServiceHost host = new ServiceHost(module, baseAddress);
+                host.Description.Behaviors.Add(smb);
+                module.WcfHost = host;
+                module.WcfHost.Open();
+                Console.WriteLine("Created service: " + baseAddress.ToString());
+            }
+            #endregion
+
             if (smarthouses.Count > 0)
             {
                 #region Prepare xml to send
@@ -110,8 +165,10 @@ namespace Smarthouse
                     {
                         client.Connect(smarthouse.IP.ToString(), smarthouse.Port);//Connected to the server. 
                         Console.WriteLine("+\t Connected to " + client.Client.RemoteEndPoint);
-                        #region Exchange configs
+
                         string recievedConfig;
+                        #region Exchange configs
+
                         using (NetworkStream cfgExchangeStream = client.GetStream())
                         {
                             SendConfig(cfgExchangeStream, smarthouseConfig.ToString());
@@ -119,6 +176,7 @@ namespace Smarthouse
                         }
                         Console.WriteLine(recievedConfig);
                         #endregion
+                        //CREATE STUBS CLIENTS
                     }
                     catch (SocketException se)
                     {

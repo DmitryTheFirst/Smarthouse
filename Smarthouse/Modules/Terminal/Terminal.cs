@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ServiceModel;
 using System.Xml;
 
 namespace Smarthouse.Modules.Terminal
 {
 
-    class Terminal : IModule, ITerminal
+    class Terminal : IModule, ITerminal, IRemote
     {
         /*Terminal can be not one. They all connected through the local network. Not implemented yet*/
 
@@ -15,6 +16,7 @@ namespace Smarthouse.Modules.Terminal
         private byte tryesToLogin = 3;
         public Dictionary<string, string> Description { get; set; }
         public XmlNode Cfg { get; set; }
+        public ServiceHost WcfHost { get; set; }
 
         public bool Init()
         {
@@ -62,6 +64,6 @@ namespace Smarthouse.Modules.Terminal
             Console.ResetColor();
         }
 
-
+        ServiceHost IRemote.WcfHost { get; set; }
     }
 }

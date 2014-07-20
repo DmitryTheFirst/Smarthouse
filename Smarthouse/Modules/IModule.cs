@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
+using System.ServiceModel;
 using System.Xml;
 
 namespace Smarthouse

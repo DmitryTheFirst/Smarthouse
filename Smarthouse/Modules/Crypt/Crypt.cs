@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ServiceModel;
 using System.Xml;
 
 namespace Smarthouse.Modules.Crypt
@@ -8,6 +9,7 @@ namespace Smarthouse.Modules.Crypt
     {
         public Dictionary<string, string> Description { get; set; }
         public XmlNode Cfg { get; set; }
+
         public bool Init()
         {
             throw new NotImplementedException();

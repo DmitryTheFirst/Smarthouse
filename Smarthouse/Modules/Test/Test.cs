@@ -1,19 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
+using System.ServiceModel;
 using System.Threading;
 using System.Xml;
+using Smarthouse.Modules;
 using Smarthouse.Modules.TcpNetwork;
+using Smarthouse.Modules.Test;
 
 namespace Smarthouse
 {
-    class Test : IModule
+    [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single)]
+    class Test : IModule, ITest, IRemote
     {
         private int timeout = 100;
         public Dictionary<string, string> Description { get; set; }
         public XmlNode Cfg { get; set; }
-        public Dictionary<string, Func<byte[]>> MethodResolver { get; set; }
-        public bool Stub { get; set; }
+        public ServiceHost WcfHost { get; set; }
         private string myIp;
         public bool Init()
         {
@@ -21,6 +24,11 @@ namespace Smarthouse
             myIp = Cfg.SelectSingleNode("netCfg").Attributes["ip"].Value;
             #endregion
             return true;
+        }
+
+        public int GetRandomNum(int min, int max)
+        {
+            return new Random().Next(min, max);
         }
 
         private TcpNetwork NetworkMain;
@@ -32,7 +40,7 @@ namespace Smarthouse
             //NetworkAdditional1 = (TcpNetwork)Smarthouse.moduleManager.FindModule("name", "NetworkAdditional1");
             //NetworkAdditional2 = (TcpNetwork)Smarthouse.moduleManager.FindModule("name", "NetworkAdditional2");
 
-           // Thread t1 = new Thread(Thread1);
+            // Thread t1 = new Thread(Thread1);
             //Thread t2 = new Thread(Thread2);
             //Thread t3 = new Thread(Thread3);
 
@@ -41,13 +49,6 @@ namespace Smarthouse
             //t3.Start();
             return true;
         }
-
-        public void ExecSerializedCommand(string user, byte[] data)
-        {
-            throw new NotImplementedException();
-        }
-
-
         private void Thread1()
         {
             string partnerId;
@@ -98,11 +99,6 @@ namespace Smarthouse
         {
             //throw new NotImplementedException();
             return true;
-        }
-
-        public bool ExecString()
-        {
-            throw new NotImplementedException();
         }
     }
 }

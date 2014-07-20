@@ -2,16 +2,21 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Security.Cryptography;
+using System.ServiceModel;
 using System.Xml;
 
 namespace Smarthouse.Modules.AccountManager
 {
-    class AccountManager : IModule
-    {
+    internal class AccountManager : IModule
+    {        
+        public Dictionary<string, string> Description { get; set; }
+        public XmlNode Cfg { get; set; }
         private Dictionary<string, User> users;
+
         private byte maxLoginFailes = 3;
-        TimeSpan delay = new TimeSpan(0, 3, 0);//3 minutes delay after 3 wrong passes 
-        SHA1 sha1 = new SHA1CryptoServiceProvider();
+        private TimeSpan delay = new TimeSpan(0, 3, 0); //3 minutes delay after 3 wrong passes 
+        private SHA1 sha1 = new SHA1CryptoServiceProvider();
+
         public AccountManager()
         {
             users = new Dictionary<string, User>();
@@ -24,7 +29,7 @@ namespace Smarthouse.Modules.AccountManager
                 return false;
             User user = users[username];
             if ((user.failLogins.Count < maxLoginFailes)
-                || (DateTime.Now - user.failLogins[user.failLogins.Count - maxLoginFailes].date > delay))
+                 || (DateTime.Now - user.failLogins[user.failLogins.Count - maxLoginFailes].date > delay))
             {
                 success = Hash(password).Equals(user.hashpass);
             }
@@ -49,14 +54,33 @@ namespace Smarthouse.Modules.AccountManager
         {
             return sha1.ComputeHash(GetBytes(password));
         }
-        static byte[] GetBytes(string str)
+
+        private static byte[] GetBytes(string str)
         {
             byte[] bytes = new byte[str.Length * sizeof(char)];
             Buffer.BlockCopy(str.ToCharArray(), 0, bytes, 0, bytes.Length);
             return bytes;
         }
 
-        class User
+     
+
+
+        public bool Init()
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool Start()
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool Die()
+        {
+            throw new NotImplementedException();
+        }   
+        
+        private class User
         {
             public string name;
             public byte[] hashpass;
@@ -83,40 +107,7 @@ namespace Smarthouse.Modules.AccountManager
             }
 
         }
-
-        public Dictionary<string, string> Description { get; set; }
-        public string StrongName { get; set; }
-        public XmlNode Cfg { get; set; }
-        public Dictionary<string, Func<byte[]>> MethodResolver { get; set; }
-        public bool Stub { get; set; }
-        public EndPoint RealIp { get; set; }
-        public string StubCryptModuleName { get; set; }
-        public TcpNetwork.TcpNetwork UsingNetwork { get; set; }
-        public string PartnerNetworkId { get; set; }
-
-        public bool Init()
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool Start()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void ExecSerializedCommand(string user, byte[] data)
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool Die()
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool ExecString()
-        {
-            throw new NotImplementedException();
-        }
     }
+
+
 }
