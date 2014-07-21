@@ -16,43 +16,15 @@ using Smarthouse.Modules.Test;
 
 namespace Smarthouse
 {
-
-    class WCFServer
-    {
-        private ServiceHost host;
-        public void Create(IModule module, int port)
-        {
-
-        }
-
-        public bool Open()
-        {
-            try
-            {
-                host.Open();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                return false;
-            }
-            return true;
-        }
-
-        public void Close()
-        {
-            host.Close();
-        }
-
-
-    }
-
     class ModuleManager
     {
         List<IModule> modules;
         private string pluginsConfigPath;
         private List<RemoteSmarthouse> smarthouses;
         private XDocument smarthouseConfig;
+        private static MethodInfo CreateChannelInfo = typeof(ModuleManager).
+            GetMethod("CreateChannel", BindingFlags.Static | BindingFlags.NonPublic);
+
         public bool LoadAllModules(string configPath)
         {
             string myIP = System.Net.Dns.GetHostByName(System.Net.Dns.GetHostName()).AddressList[0].ToString();
@@ -84,13 +56,7 @@ namespace Smarthouse
                 var className = plugin.Attributes["className"];
                 var moduleConfig = plugin.SelectSingleNode("moduleConfig");
                 var discriptionDictionary = new Dictionary<string, string>();
-                #region Filling discriptionDictionary
-                foreach (XmlNode desc in plugin.SelectSingleNode("description").ChildNodes)
-                {
-                    if (desc.Attributes != null)
-                        discriptionDictionary.Add(desc.Attributes["name"].Value, desc.Attributes["value"].Value);
-                }
-                #endregion
+                LoadDescription(plugin, discriptionDictionary);
                 if (LoadModule(className.Value, moduleConfig, discriptionDictionary)) continue; //all's ok
 
                 //ERROR
@@ -167,7 +133,6 @@ namespace Smarthouse
                     if (smarthouse.Synchronized)
                         continue; //this was already synchronized
 
-                    XmlDocument remoteSmarthouseConfig = new XmlDocument();
                     using (TcpClient client = new TcpClient())
                     {
                         IAsyncResult ar = client.BeginConnect(smarthouse.IP, smarthouse.Port, null, null);
@@ -193,8 +158,8 @@ namespace Smarthouse
 
                             }
                             Console.WriteLine(recievedConfig);
-                            remoteSmarthouseConfig.LoadXml(recievedConfig);
                             #endregion
+                            LoadStub(smarthouse.IP.ToString(), recievedConfig);
                         }
                         catch (SocketException se)
                         {
@@ -207,21 +172,7 @@ namespace Smarthouse
 
 
                     }
-                    #region Creating stubs
-                    int remoteWcfPort = int.Parse(remoteSmarthouseConfig.SelectSingleNode("/smarthouse/WCF").Attributes["port"].Value);
-                    var remoteWcfModules = remoteSmarthouseConfig.SelectSingleNode("/smarthouse/plugins");
-                    foreach (XmlElement remoteWcfModule in remoteWcfModules)
-                    {
-                        var stubName = "Test1";
-                        var stubInterface = Type.GetType(remoteWcfModule.Attributes["className"].Value).GetInterfaces()[2];//FIX!!!
 
-                        var stub = (IModule)CreateChannelInfo.MakeGenericMethod(stubInterface).
-                            Invoke(null, new object[] { smarthouse, remoteWcfPort, stubName });
-                        //stub.Description =
-                        modules.Add(stub);
-                    }
-
-                    #endregion
 
                 }
                 #endregion
@@ -231,6 +182,8 @@ namespace Smarthouse
             for (var i = modules.Count - 1; i >= 0; i--)
             {
                 var module = modules[i];
+                if ( module.Description[ "stub" ] == true.ToString() )
+                    continue; //we can't start stub
                 if (module.Start()) continue;//all's ok
                 //ERROR
                 Console.WriteLine("Error starting " + module.Description["name"] + " module");
@@ -241,11 +194,74 @@ namespace Smarthouse
             return pluginSection.ChildNodes.Count == modules.Count;//read modules == now loaded
         }
 
-        private static MethodInfo CreateChannelInfo = typeof(ModuleManager).GetMethod("CreateChannel", BindingFlags.Static | BindingFlags.NonPublic);
-        private static IModule CreateChannel<T>(RemoteSmarthouse smarthouse, int remoteWcfPort, string stubName) where T : IModule
+        public bool LoadModule(string strongName, XmlNode cfg, Dictionary<string, string> description)
+        {
+            if (cfg == null) //checking cfg existance
+                Console.WriteLine("Allert: config is null!");
+
+            if (description == null || !description.ContainsKey("name"))
+            {
+                Console.WriteLine("Error: descripton must contain \"name\" attribute!");
+                return false;//descripton cant be null. At least you need to have "name attribute"
+            }
+
+            description.Add("stub", false.ToString());
+
+            Type type;
+            try
+            {
+                type = Type.GetType(strongName);
+            }
+            catch (Exception)
+            {
+                return false;   //errors in strongName
+            }
+
+            if (type == null)
+                return false;   //can't load
+
+            if (type.GetInterface(typeof(IModule).Name, false) == null)
+                return false;  //not implementing Module interface
+
+            modules.Add((IModule)Activator.CreateInstance(type));//adding module to list. Here works standart constructor in module
+            modules[modules.Count - 1].Cfg = cfg;
+            modules[modules.Count - 1].Description = description;
+            return true;
+        }
+        private void LoadStub(string ip, string remoteSmarthouseConfigString)
+        {
+            XmlDocument remoteSmarthouseConfig = new XmlDocument();
+            remoteSmarthouseConfig.LoadXml(remoteSmarthouseConfigString);
+            int remoteWcfPort = int.Parse(remoteSmarthouseConfig.SelectSingleNode("/smarthouse/WCF").Attributes["port"].Value);
+            var remoteWcfModules = remoteSmarthouseConfig.SelectSingleNode("/smarthouse/plugins");
+            foreach (XmlElement remoteWcfModule in remoteWcfModules)
+            {
+                var stubName = "Test1";
+                var stubInterface = Type.GetType(remoteWcfModule.Attributes["className"].Value).GetInterfaces()[2];//FIX!!!
+
+                var stub = (IModule)CreateChannelInfo.MakeGenericMethod(stubInterface).
+                    Invoke(null, new object[] { ip, remoteWcfPort, stubName });
+                LoadDescription(remoteWcfModule, stub.Description);
+                stub.Description.Add("stub", true.ToString());
+                modules.Add(stub);
+            }
+        }
+
+
+        private static void LoadDescription(XmlNode plugin, Dictionary<string, string> discriptionDictionary)
+        {
+            foreach (XmlNode desc in plugin.SelectSingleNode("description").ChildNodes)
+            {
+                if (desc.Attributes != null)
+                    discriptionDictionary.Add(desc.Attributes["name"].Value, desc.Attributes["value"].Value);
+            }
+        }
+
+
+        private static IModule CreateChannel<T>(string ip, int remoteWcfPort, string stubName) where T : IModule
         {
             ChannelFactory<T> myChannelFactory = new ChannelFactory<T>(new BasicHttpBinding(),
-                                    "http://" + smarthouse.IP + ":" + remoteWcfPort + "/" + stubName
+                                    "http://" + ip + ":" + remoteWcfPort + "/" + stubName
                 );
             T stub = myChannelFactory.CreateChannel();
             return stub;
@@ -280,42 +296,17 @@ namespace Smarthouse
                     string recievedConfig = RecieveConfig(cfgExchangeStream);
                     SendConfig(cfgExchangeStream, smarthouseConfig.ToString());
                     Console.WriteLine(recievedConfig);
+                    LoadStub(
+                        ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString()
+                        , recievedConfig);
                 }
                 #endregion
             } while (true);
         }
-        public bool LoadModule(string strongName, XmlNode cfg, Dictionary<string, string> description)
-        {
-            if (cfg == null) //checking cfg existance
-                Console.WriteLine("Allert: config is null!");
 
-            if (description == null || !description.ContainsKey("name"))
-            {
-                Console.WriteLine("Error: descripton must contain \"name\" attribute!");
-                return false;//descripton cant be null. At least you need to have "name attribute"
-            }
 
-            Type type;
-            try
-            {
-                type = Type.GetType(strongName);
-            }
-            catch (Exception)
-            {
-                return false;   //errors in strongName
-            }
 
-            if (type == null)
-                return false;   //can't load
 
-            if (type.GetInterface(typeof(IModule).Name, false) == null)
-                return false;  //not implementing Module interface
-
-            modules.Add((IModule)Activator.CreateInstance(type));//adding module to list. Here works standart constructor in module
-            modules[modules.Count - 1].Cfg = cfg;
-            modules[modules.Count - 1].Description = description;
-            return true;
-        }
         public bool UnloadModule(string descriptionKey, string descriptionValue)
         {
             throw new NotImplementedException();

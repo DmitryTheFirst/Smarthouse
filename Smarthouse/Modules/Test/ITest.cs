@@ -8,10 +8,12 @@ using System.Threading.Tasks;
 namespace Smarthouse.Modules.Test
 {
     [ServiceContract]
-    interface ITest:IModule
+    interface ITest : IModule
     {
 
         [OperationContract]
         int GetRandomNum(int min, int max);
+
+        Dictionary<string, string> Description { [OperationContract]get; [OperationContract]set; }
     }
 }
