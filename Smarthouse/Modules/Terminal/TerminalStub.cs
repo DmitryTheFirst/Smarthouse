@@ -14,6 +14,7 @@ namespace Smarthouse.Modules.Terminal
         public Dictionary<string, string> Description { get; set; }
         public IPEndPoint RealAddress { get; set; }
         private ITerminal _transparentProxy;
+        public event EventHandler Dead;
         public bool Init()
         {
             ChannelFactory<ITerminal> myChannelFactory = new ChannelFactory<ITerminal>(new BasicHttpBinding(),
@@ -34,7 +35,6 @@ namespace Smarthouse.Modules.Terminal
                 Dead.Invoke(null, null);
         }
 
-        public event EventHandler Dead;
 
         public int ReadInt(string message, string errorMessage, ConsoleColor messageColor)
         {

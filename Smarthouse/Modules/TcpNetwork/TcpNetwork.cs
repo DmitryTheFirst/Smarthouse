@@ -12,13 +12,14 @@ using Timer = System.Timers.Timer;
 
 namespace Smarthouse.Modules.TcpNetwork
 {
-    public class TcpNetwork
+    public class TcpNetwork : IRealModule
     {
         #region IModule
         public Dictionary<string, string> Description { get; set; }
         public XmlNode Cfg { get; set; }
-        public Dictionary<string, Func<byte[]>> MethodResolver { get; set; }
-        public bool Stub { get; set; }
+        public ModuleManager ModuleManager { get; set; }
+
+        public event EventHandler Dead;
         #endregion
 
         private const string AnonymousName = "anonymous";
@@ -55,10 +56,11 @@ namespace Smarthouse.Modules.TcpNetwork
             return true;
         }
 
-        public void ExecSerializedCommand(string user, byte[] data)
+        void IModule.Die()
         {
             throw new NotImplementedException();
         }
+
 
         public bool Die()
         {
@@ -75,7 +77,7 @@ namespace Smarthouse.Modules.TcpNetwork
             var idLength = wstream.ReadByte();
             cryptModuleName = Encoding.UTF8.GetString(wstream.ReadBytes(cryptNameLength));
             remoteId = Encoding.UTF8.GetString(wstream.ReadBytes(idLength));
-            return String.IsNullOrEmpty(cryptModuleName) || Smarthouse.ModuleManager.ContainsModule(cryptModuleName);
+            return String.IsNullOrEmpty(cryptModuleName) || ModuleManager.ContainsModule(cryptModuleName);
         }
 
         private void AuthClient(Stream newPartner, string localId, string cryptModule)
@@ -159,7 +161,11 @@ namespace Smarthouse.Modules.TcpNetwork
         {
             if (String.IsNullOrEmpty(remoteId))
                 throw new ArgumentNullException("remoteId");
-            var partner = new TcpPartner(stream, AnonymousName, cryptName);
+
+            Crypt.Crypt crypt = null;
+            if (!String.IsNullOrWhiteSpace(cryptName))
+                crypt = (Crypt.Crypt)ModuleManager.FindModule("name", cryptName);
+            var partner = new TcpPartner(stream, AnonymousName, crypt);
             lock (_pipesLocker)
             {
                 _pipes.Add(remoteId, partner);

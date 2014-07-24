@@ -16,12 +16,16 @@ namespace Smarthouse
                 ModuleManager.LoadConfig(moduleManagerConfigPath) ?
                 "Cfg is correct" :
                 "Wrong config path");
+          
             Console.WriteLine(
                 ModuleManager.LoadAllModules()
                     ? "All modules were loaded correctly. YAY!"
                     : "Not all modules were loaded correctly. Boo!");
             ModuleManager.StartAllModules();
-
+            ModuleManager.StartRecievingSmarthouses(safeMode);
+            Console.WriteLine(ModuleManager.ConnectToOtherSmarthouses()
+                ? "All smarthouses connected"
+                : "Not all smarthouses connected");
         }
     }
 }

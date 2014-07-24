@@ -7,6 +7,9 @@ namespace Smarthouse.Modules.Crypt
 {
     public class Crypt : IModule
     {
+
+        public event EventHandler Dead;
+        public ModuleManager ModuleManager { get; set; }
         public Dictionary<string, string> Description { get; set; }
         public XmlNode Cfg { get; set; }
 
@@ -25,6 +28,5 @@ namespace Smarthouse.Modules.Crypt
             throw new NotImplementedException();
         }
 
-        public event EventHandler Dead;
     }
 }

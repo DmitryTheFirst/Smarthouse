@@ -5,7 +5,6 @@
     <WCF port="5401" />
     <smarthouses>
       <smarthouse ip="192.168.0.6" port="1111"/> 
-	   <!--<smarthouse ip="192.168.0.8" port="1111"/>--> 
     </smarthouses>
   </moduleManager>
   

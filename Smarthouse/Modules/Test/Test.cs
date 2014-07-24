@@ -14,7 +14,10 @@ namespace Smarthouse.Modules.Test
         public Dictionary<string, string> Description { get; set; }
         public XmlNode Cfg { get; set; }
         public ServiceHost WcfHost { get; set; }
-        public string StubClassName { get; set; }
+        public Type StubClass { get; set; }
+
+        public event EventHandler Dead;
+        public ModuleManager ModuleManager { get; set; }
         private string myIp;
         public bool Init()
         {
@@ -100,6 +103,5 @@ namespace Smarthouse.Modules.Test
                 Dead.Invoke(null, null);
         }
 
-        public event EventHandler Dead;
     }
 }

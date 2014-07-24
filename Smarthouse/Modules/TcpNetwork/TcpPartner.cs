@@ -6,15 +6,12 @@ namespace Smarthouse.Modules.TcpNetwork
 {
     internal class TcpPartner : IDisposable
     {
-        public TcpPartner(Stream partnerStream, string username, string CryptName)
+        public TcpPartner(Stream partnerStream, string username, Crypt.Crypt CryptName)
         {
             SendSemaphore = new SemaphoreSlim(1);
             ReadSemaphore = new SemaphoreSlim(1);
             TcpStream = partnerStream;
             Username = username;
-            if (!String.IsNullOrWhiteSpace(CryptName))
-                Crypt = (Crypt.Crypt)Smarthouse.ModuleManager.FindModule("name", CryptName);
-
         }
 
         public Stream TcpStream { get; set; }

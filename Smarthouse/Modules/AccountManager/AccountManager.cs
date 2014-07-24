@@ -12,6 +12,9 @@ namespace Smarthouse.Modules.AccountManager
         public Dictionary<string, string> Description { get; set; }
         public string StubClassName { get; set; }
         public XmlNode Cfg { get; set; }
+
+        public event EventHandler Dead;
+        public ModuleManager ModuleManager { get; set; }
         private Dictionary<string, User> users;
 
         private byte maxLoginFailes = 3;
@@ -81,7 +84,6 @@ namespace Smarthouse.Modules.AccountManager
             throw new NotImplementedException();
         }
 
-        public event EventHandler Dead;
 
         private class User
         {

@@ -15,7 +15,10 @@ namespace Smarthouse.Modules.Terminal
         private string loginMessage = "Welcome, motherfucker! Who the fuck are you?";
         private byte tryesToLogin = 3;
         public ServiceHost WcfHost { get; set; }
-        public string StubClassName { get; set; }
+
+        public event EventHandler Dead;
+        public ModuleManager ModuleManager { get; set; }
+        public Type StubClass { get; set; }
         public Dictionary<string, string> Description { get; set; }
         public XmlNode Cfg { get; set; }
 
@@ -36,7 +39,6 @@ namespace Smarthouse.Modules.Terminal
             throw new NotImplementedException();
         }
 
-        public event EventHandler Dead;
 
         public int ReadInt(string message, string errorMessage, ConsoleColor messageColor)
         {

@@ -5,5 +5,6 @@ namespace Smarthouse.Modules
     interface IRealModule : IModule
     {
         XmlNode Cfg { get; set; }//path to config
+        ModuleManager ModuleManager { get; set; }
     }
 }
