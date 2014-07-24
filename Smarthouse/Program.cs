@@ -7,7 +7,8 @@ namespace Smarthouse
         static void Main(string[] args)
         {
             Console.WriteLine("Hello world!");
-            Smarthouse.StartSmarthouse(args[0]);
+            Smarthouse sh = new Smarthouse();
+            sh.EasyStart(args[0], true);
         }
     }
 

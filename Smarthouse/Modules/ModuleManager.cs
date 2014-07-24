@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -15,62 +16,126 @@ namespace Smarthouse.Modules
     class ModuleManager
     {
         List<IModule> _modules;
-        private string _pluginsConfigPath;
-        private List<RemoteSmarthouse> _smarthouses;
-        private XDocument _smarthouseConfig;
 
-        public bool LoadAllModules(string configPath)
+        #region From config
+        private List<RemoteSmarthouse> _smarthouses;
+        private int _cfgExchangerListenPort;
+        private bool _networkConfig;
+        private int _connectionTimeout;
+        private int _wcfPort;
+        private List<PluginConfig> _pluginConfigs;
+        #endregion
+        IPAddress _myIp = Dns.GetHostEntry(Dns.GetHostName()).AddressList.First(a => a.AddressFamily == AddressFamily.InterNetwork);
+        Thread _waitSmarthousesConnects;
+
+        public ModuleManager()
         {
-            var myIp = Dns.GetHostEntry(Dns.GetHostName()).AddressList.First(a => a.AddressFamily == AddressFamily.InterNetwork);
-            _pluginsConfigPath = configPath;
+            _networkConfig = false;
             _modules = new List<IModule>();
-            var fullConfig = new XmlDocument();
-            fullConfig.Load(_pluginsConfigPath);
-            #region Get moduleManager configs
-            var modulManagerConfig = fullConfig.SelectSingleNode("/config/moduleManager");//getting plugins section
+            _pluginConfigs = new List<PluginConfig>();
+            _waitSmarthousesConnects = new Thread(AcceptSmarthouse);
             _smarthouses = new List<RemoteSmarthouse>();
-            if (modulManagerConfig == null)
+        }
+        #region Load config
+        public bool LoadConfig(string cfgPath)
+        {
+            Console.WriteLine("Loading config: " + cfgPath);
+            if (!File.Exists(cfgPath))
+            {
+                Console.WriteLine("Can't access/find config");
                 return false;
-            var cfgExchanger = modulManagerConfig.SelectSingleNode("cfgExchanger");
-            if (cfgExchanger == null || cfgExchanger.Attributes == null || cfgExchanger.Attributes.Count < 2)
-                return false;
-            var listenerPort = int.Parse(cfgExchanger.Attributes["port"].Value);
-            var connectionTimeout = int.Parse(cfgExchanger.Attributes["timeoutSecs"].Value);
-            // ReSharper disable once InconsistentNaming
-            var WCFport = int.Parse(modulManagerConfig.SelectSingleNode("WCF").Attributes["port"].Value);
-            var smarthousesSection = modulManagerConfig.SelectSingleNode("smarthouses");
+            }
+            var fullConfig = new XmlDocument();
+            fullConfig.Load(cfgPath);
+            _networkConfig |= LoadModuleManager(fullConfig);
+            LoadPluginsConfigs(fullConfig);
+            return _pluginConfigs.Any() || _modules.Any();//if no modules then we can't run smarthouse
+        }
+        private bool LoadModuleManager(XmlDocument fullConfig)
+        {
+            var smarthousesSection = fullConfig.SelectSingleNode("/config/moduleManager/smarthouses");
+            bool success = true;
+            #region Parse smarthouses section
             if (smarthousesSection != null)
             {
-                _smarthouses.AddRange(
-                    smarthousesSection.ChildNodes.OfType<XmlElement>()
-                                      .Select(
-                                          smarthouseNode => new RemoteSmarthouse(
-                                              IPAddress.Parse(smarthouseNode.Attributes["ip"].Value),
-                                              int.Parse(smarthouseNode.Attributes["port"].Value))));//add smarthouses from cfg to smarthouses list
+                foreach (XmlElement smarthouse in smarthousesSection.ChildNodes.OfType<XmlElement>())
+                {
+                    IPAddress ip;
+                    int port;
+                    var ipString = smarthouse.Attributes["ip"].Value;
+                    var portString = smarthouse.Attributes["port"].Value;
+                    if (ipString != null && portString != null &&
+                        IPAddress.TryParse(ipString, out ip) && int.TryParse(portString, out port)
+                        && !_smarthouses.Exists(a => a.IP.Equals(ip) && a.Port.Equals(port)))
+                        _smarthouses.Add(new RemoteSmarthouse(ip, port));
+                }
+            }
+            if (!_smarthouses.Any())
+                success = false;
+            #endregion
+            #region cfgExchanger
+            var cfgExchanger = fullConfig.SelectSingleNode("/config/moduleManager/cfgExchanger");
+            if (cfgExchanger != null && cfgExchanger.Attributes != null && cfgExchanger.Attributes.Count >= 2)
+            {
+                var cfgExchangerPort = cfgExchanger.Attributes["port"].Value;
+                var connectionTimeout = cfgExchanger.Attributes["timeoutSecs"].Value;
+                if (!(int.TryParse(cfgExchangerPort, out _cfgExchangerListenPort) &&
+                    int.TryParse(connectionTimeout, out _connectionTimeout)))
+                    success = false;
+            }
+            else
+                success = false;
+            #endregion
+            #region wcfSection
+            var wcfSection = fullConfig.SelectSingleNode("/config/moduleManager/WCF");
+            if (wcfSection != null && wcfSection.Attributes != null)
+            {
+                var wcfPortString = wcfSection.Attributes["port"].Value;
+                if (!int.TryParse(wcfPortString, out  _wcfPort))
+                    success = false;
             }
             #endregion
-            var pluginSection = fullConfig.SelectSingleNode("/config/plugins");//getting plugins section
-            if (pluginSection == null) return true;
-            #region Load all modules
-            foreach (XmlElement plugin in pluginSection.ChildNodes.OfType<XmlElement>())
+            return success;
+        }
+        private void LoadPluginsConfigs(XmlDocument fullConfig)
+        {
+            var pluginsConfigs = fullConfig.SelectSingleNode("/config/plugins");
+            if (pluginsConfigs == null)
+                return;
+            foreach (XmlElement pluginConfig in pluginsConfigs.ChildNodes.OfType<XmlElement>())
             {
-                var className = plugin.Attributes["className"];
-                var moduleConfig = plugin.SelectSingleNode("moduleConfig");
-                var discriptionDictionary = new Dictionary<string, string>();
-                LoadDescription(plugin, discriptionDictionary);
-                if (!LoadModule(className.Value, moduleConfig, discriptionDictionary))
+                if (pluginConfig == null) continue;
+
+                var className = pluginConfig.Attributes["className"].Value;
+                var stubClassName = pluginConfig.Attributes["stubClassName"].Value;
+                Type classType = Type.GetType(className);
+                Type stubClassType = Type.GetType(stubClassName);
+                if (className == null) continue;
+                Dictionary<string, string> description = new Dictionary<string, string>();
+                XmlNode pluginInitCfg = pluginConfig.SelectSingleNode("moduleConfig");
+                if (LoadDescription(pluginConfig, description))
+                    _pluginConfigs.Add(new PluginConfig(classType, stubClassType, description, pluginInitCfg));
+            }
+        }
+        #endregion
+
+        public bool LoadAllModules()
+        {
+            #region Load all modules
+            foreach (var plugin in _pluginConfigs)
+            {
+
+                if (!LoadModule(plugin.PluginClass, plugin.ModuleConfig, plugin.Description))
                 {
-                    if (discriptionDictionary.ContainsKey("name"))
-                        Console.WriteLine("Error! Couldn't load: " + discriptionDictionary["name"]);
+                    if (plugin.Description.ContainsKey("name"))
+                        Console.WriteLine("Error! Couldn't load: " + plugin.Description["name"]);
                     else
-                        Console.WriteLine("Error! Couldn't load: " + className.Value);
+                        Console.WriteLine("Error! Couldn't load: " + plugin.PluginClass);
                 }
 
                 if (_modules.Last().GetType().GetInterface(typeof(IRealModule).Name, false) != null)
-                    ((IRemote)_modules[_modules.Count - 1]).StubClassName = plugin.Attributes["stubClassName"].Value;
-
+                    ((IRemote)_modules[_modules.Count - 1]).StubClass = plugin.PluginStubClassName;
             }
-
             #endregion
             #region Init all modules
             _modules.Reverse();//next cycle will be reversed, because we can delete modules. So, to save the right order of initializations, we need to reverse modules arr
@@ -84,7 +149,23 @@ namespace Smarthouse.Modules
                 _modules.RemoveAt(i);
             }
             #endregion
-            #region Working with stubs
+            return _pluginConfigs.Count == _modules.Count;//modules in cfg == now loaded
+        }
+        public void StartAllModules()
+        {
+            for (var i = _modules.Count - 1; i >= 0; i--) //reversed because we can delete modules from _modules
+            {
+                var module = _modules[i];
+                if (module.GetType().GetInterface(typeof(IStubModule).Name, false) != null)
+                    continue; //we are not starting stubs, because they are starting in anytime they appears
+                if (module.Start()) continue;//all's ok
+                //ERROR
+                Console.WriteLine("Error starting " + module.Description["name"] + " module");
+            }
+        }
+
+        public bool ConnectToOtherSmarthouses()
+        {
             #region Create WCF services
             ServiceMetadataBehavior smb = new ServiceMetadataBehavior
             {
@@ -94,121 +175,107 @@ namespace Smarthouse.Modules
                     PolicyVersion = PolicyVersion.Policy15
                 }
             };
+            // ReSharper disable once PossibleInvalidCastExceptionInForeachLoop
             foreach (IRemote module in _modules.Where(a => a.GetType().GetInterface("IRemote") != null))
             {
-
-                Uri baseAddress = new Uri("http://" + myIp + ":" + WCFport + "/" + ((IModule)module).Description["name"]);
+                string serviceName = ((IModule)module).Description["name"];
+                Uri baseAddress = new Uri("http://" + _myIp + ":" + _wcfPort + "/" + serviceName);
                 ServiceHost host = new ServiceHost(module, baseAddress);
                 host.Description.Behaviors.Add(smb);
                 module.WcfHost = host;
                 module.WcfHost.Open();
-                Console.WriteLine("Created service: " + baseAddress);
+                Console.WriteLine("Created WCF service: " + serviceName);
             }
             #endregion
 
-            if (_smarthouses.Count > 0)
+            if (!_smarthouses.Any())
             {
-                #region Prepare xml to send
-                _smarthouseConfig = new XDocument(
-                    new XElement("smarthouse",
-                                 new XElement("WCF",
-                                              new XAttribute("port", WCFport)),
-                                 new XElement("plugins",
-                                              _modules.Where(iface => iface.GetType().GetInterface(typeof(IRealModule).Name, false) != null).Select(a => //selecting modules where module implements IRealModule
-                                                                                                                                                    new XElement("module",
-                                                                                                                                                                 new XAttribute("className", a.GetType()),
-                                                                                                                                                                 new XAttribute("stubClassName", ((IRemote)a).StubClassName),
-                                                                                                                                                                 new XElement("description", a.Description.Select(desc =>
-                                                                                                                                                                                                                  new XElement("desc",
-                                                                                                                                                                                                                               new XAttribute("name", desc.Key),
-                                                                                                                                                                                                                               new XAttribute("value", desc.Value)
-                                                                                                                                                                                                                      )
-                                                                                                                                                                                                 )
-                                                                                                                                                                     )
+                return true;//no smarthouses to work with
+            }
 
-                                                                                                                                                        )
-                                                  )
-                                     )
-                        ));
-                #endregion
-                #region Connect to smarthouses and send/recieve config
-                Thread waitSmarthousesConnects = new Thread(AcceptSmarthouse);
-                waitSmarthousesConnects.Start(listenerPort);
+            #region Prepare xml to send
+            var wcfModulesConfig = new XDocument(
+                new XElement("smarthouse",
+                             new XElement("WCF",
+                                          new XAttribute("port", _wcfPort)),
+                             new XElement("plugins",
+                                          _modules.Where(iface => iface.GetType().GetInterface(typeof(IRealModule).Name, false) != null).
+                                          Select(a => //selecting modules where module implements IRealModule
+                                                  new XElement("module",
+                                                   new XAttribute("className", a.GetType()),
+                                                      new XAttribute("stubClassName", ((IRemote)a).StubClass.ToString()),
+                                                        new XElement("description", a.Description.Select(desc =>
+                                                            new XElement("desc",
+                                                                new XAttribute("name", desc.Key),
+                                                                new XAttribute("value", desc.Value)))))))));
+            #endregion
+            #region Connect to smarthouses and send/recieve config
 
-                foreach (var smarthouse in _smarthouses)
+            foreach (var smarthouse in _smarthouses)
+            {
+                if (smarthouse.Synchronized)
+                    continue; //this was already synchronized
+
+                using (TcpClient client = new TcpClient())
                 {
-                    if (smarthouse.Synchronized)
-                        continue; //this was already synchronized
-
-                    using (TcpClient client = new TcpClient())
+                    IAsyncResult ar = client.BeginConnect(smarthouse.IP, smarthouse.Port, null, null);
+                    WaitHandle wh = ar.AsyncWaitHandle;
+                    try
                     {
-                        IAsyncResult ar = client.BeginConnect(smarthouse.IP, smarthouse.Port, null, null);
-                        WaitHandle wh = ar.AsyncWaitHandle;
-                        try
+                        if (!ar.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(_connectionTimeout), false))
                         {
-                            if (!ar.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(connectionTimeout), false))
-                            {
-                                client.Close();
-                                Console.WriteLine(
-                                    smarthouse.IP + " wasn't answering on connection request for " + connectionTimeout + " seconds.");
-                                break;
-                            }
-
-                            client.EndConnect(ar);
-                            Console.WriteLine("+\t Connected to " + client.Client.RemoteEndPoint);
-                            #region Exchange configs
-                            string recievedConfig;
-                            using (NetworkStream cfgExchangeStream = client.GetStream())
-                            {
-                                SendConfig(cfgExchangeStream, _smarthouseConfig.ToString());
-                                recievedConfig = RecieveConfig(cfgExchangeStream);
-
-                            }
-                            Console.WriteLine(recievedConfig);
-                            #endregion
-                            LoadStub(smarthouse.IP.ToString(), recievedConfig);
-                        }
-                        catch (SocketException se)
-                        {
-                            Console.WriteLine("Error connecting " + smarthouse.IP + ':' + smarthouse.Port + "\n" + se.Message);
-                        }
-                        finally
-                        {
-                            wh.Close();
+                            client.Close();
+                            Console.WriteLine(
+                                smarthouse.IP + " wasn't answering on connection request for " + _connectionTimeout + " seconds.");
+                            break;
                         }
 
-
+                        client.EndConnect(ar);
+                        Console.WriteLine("+\t Connected to " + client.Client.RemoteEndPoint);
+                        #region Exchange configs
+                        string recievedConfig;
+                        using (NetworkStream cfgExchangeStream = client.GetStream())
+                        {
+                            SendConfig(cfgExchangeStream, wcfModulesConfig.ToString());
+                            recievedConfig = RecieveConfig(cfgExchangeStream);
+                        }
+                        #endregion
+                        LoadStub(smarthouse.IP.ToString(), recievedConfig);
+                    }
+                    catch (SocketException se)
+                    {
+                        Console.WriteLine("Error connecting " + smarthouse.IP + ':' + smarthouse.Port);
+                    }
+                    finally
+                    {
+                        wh.Close();
                     }
 
 
                 }
-                #endregion
+
+
             }
             #endregion
-            #region Start all modules
-            for (var i = _modules.Count - 1; i >= 0; i--)
-            {
-                var module = _modules[i];
 
 
-                if (module.GetType().GetInterface(typeof(IStubModule).Name, false) != null)
-                    continue; //we are not starting stubs, because they are starting in anytime they appears
-
-
-                if (module.Start()) continue;//all's ok
-                //ERROR
-                Console.WriteLine("Error starting " + module.Description["name"] + " module");
-                module.Die();
-                _modules.RemoveAt(i);
-            }
-            #endregion
-            return pluginSection.ChildNodes.Count == _modules.Count;//read modules == now loaded
         }
 
-        public bool LoadModule(string strongName, XmlNode cfg, Dictionary<string, string> description)
+        public void StartRecievingSmarthouses()
+        {
+
+            _waitSmarthousesConnects.Start(listenerPort);
+        }
+
+        public void StopRecievingSmarthouses()
+        {
+            waitSmarthousesConnects.Abort();
+        }
+
+        public bool LoadModule(Type type, XmlNode cfg, Dictionary<string, string> description)
         {
             if (cfg == null) //checking cfg existance
-                Console.WriteLine("Allert: config is null!");
+                Console.WriteLine("Alert: config is null!");
 
             if (description == null || !description.ContainsKey("name"))
             {
@@ -216,21 +283,8 @@ namespace Smarthouse.Modules
                 return false;//descripton cant be null. At least you need to have "name attribute"
             }
 
-            Type type;
-            try
-            {
-                type = Type.GetType(strongName);
-            }
-            catch (Exception)
-            {
-                return false;   //errors in strongName
-            }
-
-            if (type == null)
-                return false;   //can't load
-
             if (type.GetInterface(typeof(IRealModule).Name, false) == null)
-                return false;  //not implementing Module interface
+                return false;  //not implemented Module interface
 
             var module = (IRealModule)Activator.CreateInstance(type);
             module.Cfg = cfg;
@@ -262,13 +316,16 @@ namespace Smarthouse.Modules
 
         }
 
-        private static void LoadDescription(XmlNode plugin, Dictionary<string, string> discriptionDictionary)
+        private bool LoadDescription(XmlNode plugin, Dictionary<string, string> descriptionDictionary)
         {
-            foreach (XmlNode desc in plugin.SelectSingleNode("description").ChildNodes)
+            var description = plugin.SelectSingleNode("description");
+            if (description == null)
+                return false;
+            foreach (XmlElement desc in description.ChildNodes.OfType<XmlElement>())
             {
-                if (desc.Attributes != null)
-                    discriptionDictionary.Add(desc.Attributes["name"].Value, desc.Attributes["value"].Value);
+                descriptionDictionary.Add(desc.Attributes["name"].Value, desc.Attributes["value"].Value);
             }
+            return descriptionDictionary.Any();
         }
 
         private string RecieveConfig(NetworkStream cfgExchangeStream)
@@ -298,7 +355,7 @@ namespace Smarthouse.Modules
                 using (NetworkStream cfgExchangeStream = client.GetStream())
                 {
                     string recievedConfig = RecieveConfig(cfgExchangeStream);
-                    SendConfig(cfgExchangeStream, _smarthouseConfig.ToString());
+                    SendConfig(cfgExchangeStream, _wcfModulesConfig.ToString());
                     Console.WriteLine(recievedConfig);
                     LoadStub(
                         ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString()
@@ -317,7 +374,7 @@ namespace Smarthouse.Modules
 
         private void RemoveFromList(string descriptionKey, string descriptionValue)
         {
-            
+
         }
         public void UnloadAllModules()
         {
@@ -348,5 +405,21 @@ namespace Smarthouse.Modules
         public IPAddress IP { get; set; }
         public int Port { get; set; }
         public bool Synchronized { get; set; }
+    }
+
+    class PluginConfig
+    {
+        public PluginConfig(Type pluginClass, Type pluginStubClassName, Dictionary<string, string> description, XmlNode moduleConfig)
+        {
+            PluginClass = pluginClass;
+            PluginStubClassName = pluginStubClassName;
+            Description = description;
+            ModuleConfig = moduleConfig;
+        }
+
+        public Type PluginClass { get; set; }
+        public Type PluginStubClassName { get; set; }
+        public Dictionary<string, string> Description { get; set; }
+        public XmlNode ModuleConfig { get; set; }
     }
 }
