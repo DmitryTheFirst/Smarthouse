@@ -1,17 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Smarthouse.Modules.Test
+namespace Smarthouse.Modules
 {
-    [ServiceContract]
-    interface ITest 
+    interface IStubModule : IModule
     {
-
-        [OperationContract]
-        int GetRandomNum(int min, int max);
+        IPEndPoint RealAddress { get; set; }
     }
 }

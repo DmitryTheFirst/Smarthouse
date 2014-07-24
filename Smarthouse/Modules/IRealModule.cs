@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 
 namespace Smarthouse.Modules
 {
-    interface IRemote
+    interface IRealModule : IModule
     {
-        ServiceHost WcfHost { get; set; }
-        string StubClassName { get; set; }
+        XmlNode Cfg { get; set; }//path to config
     }
 }

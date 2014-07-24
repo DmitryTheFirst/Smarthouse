@@ -4,19 +4,17 @@ using System.Net;
 using System.ServiceModel;
 using System.Threading;
 using System.Xml;
-using Smarthouse.Modules;
-using Smarthouse.Modules.TcpNetwork;
-using Smarthouse.Modules.Test;
 
-namespace Smarthouse
+namespace Smarthouse.Modules.Test
 {
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single)]
-    class Test : IModule, ITest, IRemote
+    class Test : IRealModule, ITest, IRemote
     {
         private int timeout = 100;
         public Dictionary<string, string> Description { get; set; }
         public XmlNode Cfg { get; set; }
         public ServiceHost WcfHost { get; set; }
+        public string StubClassName { get; set; }
         private string myIp;
         public bool Init()
         {
@@ -31,9 +29,9 @@ namespace Smarthouse
             return new Random().Next(min, max);
         }
 
-        private TcpNetwork NetworkMain;
-        private TcpNetwork NetworkAdditional1;
-        private TcpNetwork NetworkAdditional2;
+        private TcpNetwork.TcpNetwork NetworkMain;
+        private TcpNetwork.TcpNetwork NetworkAdditional1;
+        private TcpNetwork.TcpNetwork NetworkAdditional2;
         public bool Start()
         {
             //NetworkMain = (TcpNetwork)Smarthouse.moduleManager.FindModule("name", "NetworkMain");
@@ -100,5 +98,6 @@ namespace Smarthouse
             //throw new NotImplementedException();
             return true;
         }
+
     }
 }

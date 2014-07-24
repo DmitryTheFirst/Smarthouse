@@ -5,12 +5,12 @@
     <WCF port="5402" />
     <smarthouses>
       <smarthouse ip="192.168.0.100" port="1111"/>
-	  <smarthouse ip="192.168.0.8" port="1111"/>
+      <!--<smarthouse ip="192.168.0.8" port="1111"/>-->
     </smarthouses>
   </moduleManager>
- 
+
   <plugins>
-    <plugin className="Smarthouse.Test">
+    <plugin className="Smarthouse.Modules.Test.Test" stubClassName="Smarthouse.Modules.Test.TestStub">
       <description>
         <desc name="name" value="Test1"/>
       </description>

@@ -10,7 +10,7 @@
   </moduleManager>
 
   <plugins>
-    <plugin className="Smarthouse.Test">
+    <plugin className="Smarthouse.Modules.Test.Test" stubClassName="Smarthouse.Modules.Test.TestStub">
       <description>
         <desc name="name" value="Test2"/>
       </description>

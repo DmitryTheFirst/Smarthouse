@@ -59,10 +59,14 @@
     <Compile Include="Modules\Crypt\Crypt.cs" />
     <Compile Include="Modules\Hardware\Hardware.cs" />
     <Compile Include="Modules\IModule.cs" />
+    <Compile Include="Modules\IRealModule.cs" />
     <Compile Include="Modules\IRemote.cs" />
+    <Compile Include="Modules\IStubModule.cs" />
     <Compile Include="Modules\ModuleManager.cs" />
     <Compile Include="Modules\Terminal\ITerminal.cs" />
+    <Compile Include="Modules\Terminal\TerminalStub.cs" />
     <Compile Include="Modules\Test\ITest.cs" />
+    <Compile Include="Modules\Test\TestStub.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Smarthouse.cs" />

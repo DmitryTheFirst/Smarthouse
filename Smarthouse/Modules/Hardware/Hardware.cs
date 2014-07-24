@@ -11,7 +11,6 @@ namespace Smarthouse.Modules.Hardware
     {
         public Dictionary<string, string> Description { get; set; }
         public XmlNode Cfg { get; set; }
-        public Dictionary<string, Func<byte[]>> MethodResolver { get; set; }
         public bool Stub { get; set; }
 
         public bool Init()

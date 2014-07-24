@@ -10,6 +10,7 @@ namespace Smarthouse.Modules.AccountManager
     internal class AccountManager : IModule
     {
         public Dictionary<string, string> Description { get; set; }
+        public string StubClassName { get; set; }
         public XmlNode Cfg { get; set; }
         private Dictionary<string, User> users;
 

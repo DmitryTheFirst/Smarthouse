@@ -5,8 +5,8 @@ using System.Xml;
 
 namespace Smarthouse.Modules.Terminal
 {
-
-    class Terminal : IModule, ITerminal, IRemote
+    [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single)]
+    class Terminal : IRealModule, ITerminal, IRemote
     {
         /*Terminal can be not one. They all connected through the local network. Not implemented yet*/
 
@@ -14,9 +14,10 @@ namespace Smarthouse.Modules.Terminal
 
         private string loginMessage = "Welcome, motherfucker! Who the fuck are you?";
         private byte tryesToLogin = 3;
+        public ServiceHost WcfHost { get; set; }
+        public string StubClassName { get; set; }
         public Dictionary<string, string> Description { get; set; }
         public XmlNode Cfg { get; set; }
-        public ServiceHost WcfHost { get; set; }
 
         public bool Init()
         {
@@ -64,6 +65,5 @@ namespace Smarthouse.Modules.Terminal
             Console.ResetColor();
         }
 
-        ServiceHost IRemote.WcfHost { get; set; }
     }
 }

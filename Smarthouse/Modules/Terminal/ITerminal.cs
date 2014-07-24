@@ -4,7 +4,7 @@ using System.ServiceModel;
 namespace Smarthouse.Modules.Terminal
 {
     [ServiceContract]
-    interface ITerminal : IModule
+    interface ITerminal 
     {
         [OperationContract]
         int ReadInt(string message, string errorMessage, ConsoleColor messageColor);
