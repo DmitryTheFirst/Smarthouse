@@ -1,10 +1,12 @@
-﻿namespace Smarthouse
-{
-    static class Smarthouse
-    {
-        public static ModuleManager ModuleManager;
+﻿using Smarthouse.Modules;
 
-        public static void StartSmarthouse(string moduleManagerConfigPath)
+namespace Smarthouse
+{
+    class Smarthouse
+    {
+        public ModuleManager ModuleManager;
+
+        public void StartSmarthouse(string moduleManagerConfigPath)
         {
             ModuleManager = new ModuleManager();
             ModuleManager.LoadAllModules(moduleManagerConfigPath);

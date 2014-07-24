@@ -20,9 +20,11 @@ namespace Smarthouse.Modules.Crypt
             throw new NotImplementedException();
         }
 
-        public bool Die()
+        public void Die()
         {
             throw new NotImplementedException();
         }
+
+        public event EventHandler Dead;
     }
 }

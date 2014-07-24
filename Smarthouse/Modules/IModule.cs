@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net;
-using System.ServiceModel;
-using System.Xml;
 
-namespace Smarthouse
+namespace Smarthouse.Modules
 {
     public interface IModule
     {
@@ -12,6 +9,7 @@ namespace Smarthouse
         Dictionary<string, string> Description { get; set; }
         bool Init();//Initializing from cfg 
         bool Start();//From now it can work. If it's a daemon - starting thread
-        bool Die();// Dispose all & kill all threads. Save state.
+        void Die();// Dispose all & kill all threads. Save state.
+        event EventHandler Dead;
     }
 }

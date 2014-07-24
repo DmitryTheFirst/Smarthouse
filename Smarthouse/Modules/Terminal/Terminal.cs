@@ -31,10 +31,12 @@ namespace Smarthouse.Modules.Terminal
             throw new NotImplementedException();
         }
 
-        public bool Die()
+        public void Die()
         {
             throw new NotImplementedException();
         }
+
+        public event EventHandler Dead;
 
         public int ReadInt(string message, string errorMessage, ConsoleColor messageColor)
         {

@@ -93,11 +93,13 @@ namespace Smarthouse.Modules.Test
             }
         }
 
-        public bool Die()
+        public void Die()
         {
             //throw new NotImplementedException();
-            return true;
+            if (Dead != null)
+                Dead.Invoke(null, null);
         }
 
+        public event EventHandler Dead;
     }
 }

@@ -56,9 +56,11 @@ namespace Smarthouse.Modules.Hardware
             throw new NotImplementedException();
         }
 
-        public bool Die()
+        public void Die()
         {
             throw new NotImplementedException();
         }
+
+        public event EventHandler Dead;
     }
 }

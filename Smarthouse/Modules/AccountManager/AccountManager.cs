@@ -76,10 +76,12 @@ namespace Smarthouse.Modules.AccountManager
             throw new NotImplementedException();
         }
 
-        public bool Die()
+        public void Die()
         {
             throw new NotImplementedException();
         }
+
+        public event EventHandler Dead;
 
         private class User
         {
