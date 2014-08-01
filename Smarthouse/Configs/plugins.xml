@@ -11,7 +11,7 @@
   <plugins>
     <plugin className="Smarthouse.Modules.Test.Test" stubClassName="Smarthouse.Modules.Test.TestStub">
       <description>
-        <desc name="name" value="TestMain"/>
+        <desc name="name" value="TerminalMain"/>
       </description>
       <moduleConfig>
         <netCfg ip="192.168.0.100"/>

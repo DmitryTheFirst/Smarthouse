@@ -3,17 +3,19 @@ using System.Collections.Generic;
 using System.Net;
 using System.ServiceModel;
 
-namespace Smarthouse.Modules.Test
+namespace Smarthouse.Modules.Hardware.Led
 {
-    class TestStub : IStubModule, ITest
+    class LedStub : IStubModule, ILed
     {
         public Dictionary<string, string> Description { get; set; }
-        public IPEndPoint RealAddress { get; set; }
-        private ChannelFactory<ITest> MyChannelFactory { get; set; }
-        private ITest _transparentProxy;
+
+        #region Channel
+        private ChannelFactory<ILed> MyChannelFactory { get; set; }
+        private ILed _transparentProxy;
+        #endregion
         public bool Init()
         {
-            MyChannelFactory = new ChannelFactory<ITest>(new BasicHttpBinding(),
+            MyChannelFactory = new ChannelFactory<ILed>(new BasicHttpBinding(),
                                       "http://" + RealAddress.Address + ":" + RealAddress.Port + "/" + Description["name"]
                   );
             Console.WriteLine(Description["name"] + " stub just initiated");
@@ -33,12 +35,12 @@ namespace Smarthouse.Modules.Test
         }
 
         public event EventHandler Dead;
+        public IPEndPoint RealAddress { get; set; }
 
-        public int GetRandomNum(int min, int max)
+
+        public void SetState(bool state)
         {
-            Console.WriteLine(Description["name"] + " stub GetRandomNum called");
-            return _transparentProxy.GetRandomNum(min, max);
+            _transparentProxy.SetState(state);
         }
-
     }
 }

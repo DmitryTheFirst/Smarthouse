@@ -57,11 +57,14 @@
   <ItemGroup>
     <Compile Include="Modules\AccountManager\AccountManager.cs" />
     <Compile Include="Modules\Crypt\Crypt.cs" />
-    <Compile Include="Modules\Hardware\Hardware.cs" />
+    <Compile Include="Modules\Hardware\WiringPi.cs" />
     <Compile Include="Modules\IModule.cs" />
     <Compile Include="Modules\IRealModule.cs" />
     <Compile Include="Modules\IRemote.cs" />
     <Compile Include="Modules\IStubModule.cs" />
+    <Compile Include="Modules\Hardware\Led\ILed.cs" />
+    <Compile Include="Modules\Hardware\Led\Led.cs" />
+    <Compile Include="Modules\Hardware\Led\LedStub.cs" />
     <Compile Include="Modules\ModuleManager.cs" />
     <Compile Include="Modules\Terminal\ITerminal.cs" />
     <Compile Include="Modules\Terminal\TerminalStub.cs" />
