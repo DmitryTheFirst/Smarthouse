@@ -12,6 +12,7 @@ using Timer = System.Timers.Timer;
 
 namespace Smarthouse.Modules.TcpNetwork
 {
+    /*
     public class TcpNetwork : IRealModule
     {
         #region IModule
@@ -351,4 +352,5 @@ namespace Smarthouse.Modules.TcpNetwork
             internal string LocalId { get; set; }
         }
     }
+     */
 }

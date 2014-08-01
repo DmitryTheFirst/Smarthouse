@@ -2,20 +2,19 @@
 <config>
   <moduleManager>
     <cfgExchanger port="1111" timeoutSecs="2"/>
-    <WCF port="5402" />
+    <WCF port="5401" />
     <smarthouses>
-      <smarthouse ip="192.168.0.100" port="1111"/>
-      <!--<smarthouse ip="192.168.0.8" port="1111"/>-->
+      <smarthouse ip="192.168.0.6" port="1111"/> 
     </smarthouses>
   </moduleManager>
-
+  
   <plugins>
     <plugin className="Smarthouse.Modules.Test.Test" stubClassName="Smarthouse.Modules.Test.TestStub">
       <description>
-        <desc name="name" value="Test1"/>
+        <desc name="name" value="TerminalMain"/>
       </description>
       <moduleConfig>
-        <netCfg ip="192.168.0.6"/>
+        <netCfg ip="192.168.0.100"/>
       </moduleConfig>
     </plugin>
   </plugins>
