@@ -33,10 +33,12 @@ namespace Smarthouse.Modules.Test
         }
 
         //private TcpNetwork.TcpNetwork NetworkMain;
-       // private TcpNetwork.TcpNetwork NetworkAdditional1;
-       // private TcpNetwork.TcpNetwork NetworkAdditional2;
+        // private TcpNetwork.TcpNetwork NetworkAdditional1;
+        // private TcpNetwork.TcpNetwork NetworkAdditional2;
         public bool Start()
         {
+            Thread t1 = new Thread(Thread1);
+
             //NetworkMain = (TcpNetwork)Smarthouse.moduleManager.FindModule("name", "NetworkMain");
             //NetworkAdditional1 = (TcpNetwork)Smarthouse.moduleManager.FindModule("name", "NetworkAdditional1");
             //NetworkAdditional2 = (TcpNetwork)Smarthouse.moduleManager.FindModule("name", "NetworkAdditional2");
@@ -45,14 +47,26 @@ namespace Smarthouse.Modules.Test
             //Thread t2 = new Thread(Thread2);
             //Thread t3 = new Thread(Thread3);
 
-            //t1.Start();
+            t1.Start();
             //t2.Start();
             //t3.Start();
             return true;
         }
         private void Thread1()
         {
-            string partnerId;
+            //string partnerId;
+            Thread.Sleep(10000);// FIX THIS SHIT!!!!
+            var otherTest = (ITest)ModuleManager.FindModule("name", "TestPi");
+            if (otherTest != null)
+            {
+
+                for (int i = 0; i < 100; i++)
+                    Console.WriteLine(otherTest.GetRandomNum(0, i));
+            }
+            else
+            {
+                Console.WriteLine("null");
+            }
             //if (NetworkMain.ConnectTo(new IPEndPoint(IPAddress.Parse(myIp), 112), null, out partnerId))
             //{
             //    Console.WriteLine("NetworkMain connected to NetworkAdditional1");

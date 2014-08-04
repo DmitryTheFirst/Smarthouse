@@ -192,11 +192,7 @@ namespace Smarthouse.Modules
             #region Create WCF services
             ServiceMetadataBehavior smb = new ServiceMetadataBehavior
             {
-                HttpGetEnabled = true,
-                MetadataExporter =
-                {
-                    PolicyVersion = PolicyVersion.Policy15
-                }
+                HttpGetEnabled = true
             };
             // ReSharper disable once PossibleInvalidCastExceptionInForeachLoop
             foreach (IRemote module in _modules.Where(a => a.GetType().GetInterface("IRemote") != null))
