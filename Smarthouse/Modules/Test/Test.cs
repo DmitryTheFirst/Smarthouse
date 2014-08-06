@@ -54,30 +54,26 @@ namespace Smarthouse.Modules.Test
         }
         private void Thread1()
         {
-            //string partnerId;
-            //Thread.Sleep(10000);// FIX THIS SHIT!!!!
-            var otherTest = (ITest)ModuleManager.FindModule("name", "TestPi");
-            if (otherTest != null)
+            do
             {
-
-                for (int i = 0; i < 100; i++)
-                    Console.WriteLine(otherTest.GetRandomNum(0, i));
-            }
-            else
-            {
-                Console.WriteLine("null");
-            }
-            //if (NetworkMain.ConnectTo(new IPEndPoint(IPAddress.Parse(myIp), 112), null, out partnerId))
-            //{
-            //    Console.WriteLine("NetworkMain connected to NetworkAdditional1");
-            //    for (int i = 1; i <= 1000; i++)
-            //    {
-            //        NetworkMain.SendTo("NetworkAdditional1", new byte[i]);
-            //        NetworkMain.SendTo("NetworkAdditional2", new byte[i]);
-
-            //        Thread.Sleep(timeout);
-            //    }
-            //}
+                var otherTest = (ITest)ModuleManager.FindModule("name", "TestPi");
+                if (otherTest != null)
+                {
+                    try
+                    {
+                        Console.WriteLine(otherTest.GetRandomNum(0, 1000));
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Module TestPi not found");
+                }
+                Thread.Sleep(10);
+            } while (true);
         }
 
         private void Thread2()
@@ -112,7 +108,6 @@ namespace Smarthouse.Modules.Test
 
         public void Die()
         {
-            //throw new NotImplementedException();
             if (Dead != null)
                 Dead.Invoke(null, null);
         }

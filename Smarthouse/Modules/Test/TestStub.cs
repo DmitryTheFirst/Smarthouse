@@ -29,15 +29,24 @@ namespace Smarthouse.Modules.Test
 
         public void Die()
         {
-            throw new NotImplementedException();
+            if (Dead != null)
+                Dead.Invoke(null, null);
         }
 
         public event EventHandler Dead;
 
         public int GetRandomNum(int min, int max)
         {
-            Console.WriteLine(Description["name"] + " stub GetRandomNum called");
-            return _transparentProxy.GetRandomNum(min, max);
+            try
+            {
+                return _transparentProxy.GetRandomNum(min, max);
+            }
+            catch (EndpointNotFoundException ex)
+            {
+                Die();
+                throw new Exception("Connection problems", ex);
+            }
+
         }
 
     }
