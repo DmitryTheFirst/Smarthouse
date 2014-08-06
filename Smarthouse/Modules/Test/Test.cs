@@ -55,7 +55,7 @@ namespace Smarthouse.Modules.Test
         private void Thread1()
         {
             //string partnerId;
-            Thread.Sleep(10000);// FIX THIS SHIT!!!!
+            //Thread.Sleep(10000);// FIX THIS SHIT!!!!
             var otherTest = (ITest)ModuleManager.FindModule("name", "TestPi");
             if (otherTest != null)
             {
