@@ -31,7 +31,8 @@ namespace Smarthouse.Modules.Hardware.Led
 
         public void Die()
         {
-            throw new NotImplementedException();
+            if (Dead != null)
+                Dead.Invoke(null, null);
         }
 
         public event EventHandler Dead;

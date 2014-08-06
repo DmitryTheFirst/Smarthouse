@@ -257,11 +257,7 @@ namespace Smarthouse.Modules
                     {
                         wh.Close();
                     }
-
-
                 }
-
-
             }
             #endregion
 

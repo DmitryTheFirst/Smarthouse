@@ -36,7 +36,8 @@ namespace Smarthouse.Modules.Terminal
 
         public void Die()
         {
-            throw new NotImplementedException();
+            if (Dead != null)
+                Dead.Invoke(null, null);
         }
 
 

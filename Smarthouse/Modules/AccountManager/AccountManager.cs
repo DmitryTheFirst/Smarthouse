@@ -81,7 +81,8 @@ namespace Smarthouse.Modules.AccountManager
 
         public void Die()
         {
-            throw new NotImplementedException();
+            if (Dead != null)
+                Dead.Invoke(null, null);
         }
 
 
