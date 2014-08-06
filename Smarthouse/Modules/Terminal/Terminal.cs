@@ -31,7 +31,9 @@ namespace Smarthouse.Modules.Terminal
         }
         public bool Start()
         {
-            throw new NotImplementedException();
+            //Start thread listener for input
+            //throw new NotImplementedException();
+            return true;
         }
 
         public void Die()

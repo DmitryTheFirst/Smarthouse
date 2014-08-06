@@ -4,17 +4,26 @@
     <cfgExchanger port="1111" timeoutSecs="2"/>
     <WCF port="5401" />
     <smarthouses>
-      <smarthouse ip="192.168.0.100" port="1111"/> 
+      <smarthouse ip="192.168.0.100" port="1111"/>
     </smarthouses>
   </moduleManager>
-  
+
   <plugins>
-    <plugin className="Smarthouse.Modules.Test.Test" stubClassName="Smarthouse.Modules.Test.TestStub">
+    <!--<plugin className="Smarthouse.Modules.Test.Test" stubClassName="Smarthouse.Modules.Test.TestStub">
       <description>
         <desc name="name" value="TestPi"/>
       </description>
       <moduleConfig>
         <netCfg ip="192.168.0.141"/>
+      </moduleConfig>
+    </plugin>-->
+    <plugin className="Smarthouse.Modules.Hardware.Led.Led"
+                stubClassName="Smarthouse.Modules.Hardware.Led.LedStub">
+      <description>
+        <desc name="name" value="Led1"/>
+      </description>
+      <moduleConfig>
+        <hardware pin="11"/>
       </moduleConfig>
     </plugin>
   </plugins>

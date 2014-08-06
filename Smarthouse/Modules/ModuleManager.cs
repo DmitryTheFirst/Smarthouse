@@ -113,7 +113,16 @@ namespace Smarthouse.Modules
                 var stubClassName = pluginConfig.Attributes["stubClassName"].Value;
                 Type classType = Type.GetType(className);
                 Type stubClassType = Type.GetType(stubClassName);
-                if (classType == null) continue;
+                if (classType == null)
+                {
+                    Console.WriteLine(className + " doesn't exist");
+                    continue;
+                }
+                if (stubClassType == null)
+                {
+                    Console.WriteLine(stubClassName + " doesn't exist");
+                    continue;
+                }
                 Dictionary<string, string> description = new Dictionary<string, string>();
                 XmlNode pluginInitCfg = pluginConfig.SelectSingleNode("moduleConfig");
                 if (LoadDescription(pluginConfig, description))

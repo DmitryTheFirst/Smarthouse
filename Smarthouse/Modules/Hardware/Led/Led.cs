@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ServiceModel;
 using System.Xml;
+using Smarthouse.Modules.Terminal;
 
 namespace Smarthouse.Modules.Hardware.Led
 {
@@ -42,6 +43,9 @@ namespace Smarthouse.Modules.Hardware.Led
             WiringPi.digitalWrite(wiringPiPin, state ?
                 (int)WiringPi.PinSignal.HIGH :
                 (int)WiringPi.PinSignal.LOW);
+            var terminal = (ITerminal)ModuleManager.FindModule("name", "TerminalMain");
+            Console.WriteLine(terminal);
+            terminal.WriteLine("Led " + state, state ? ConsoleColor.Green : ConsoleColor.Red);
         }
 
         public ServiceHost WcfHost { get; set; }

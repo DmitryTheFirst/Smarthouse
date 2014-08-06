@@ -6,6 +6,7 @@ using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using Smarthouse.Modules.Hardware.Led;
 
 namespace Smarthouse.Modules.Terminal
 {
@@ -13,20 +14,25 @@ namespace Smarthouse.Modules.Terminal
     {
         public Dictionary<string, string> Description { get; set; }
         public IPEndPoint RealAddress { get; set; }
+        #region Channel
+        private ChannelFactory<ITerminal> MyChannelFactory { get; set; }
         private ITerminal _transparentProxy;
+        #endregion
         public event EventHandler Dead;
         public bool Init()
         {
-            ChannelFactory<ITerminal> myChannelFactory = new ChannelFactory<ITerminal>(new BasicHttpBinding(),
-                                    "http://" + RealAddress.Address + ":" + RealAddress.Port + "/" + Description["name"]
-                );
-            _transparentProxy = myChannelFactory.CreateChannel();
+            MyChannelFactory = new ChannelFactory<ITerminal>(new BasicHttpBinding(),
+                                       "http://" + RealAddress.Address + ":" + RealAddress.Port + "/" + Description["name"]
+                   );
+            Console.WriteLine(Description["name"] + " stub just initiated");
             return true;
         }
 
         public bool Start()
         {
-            throw new NotImplementedException();
+            _transparentProxy = MyChannelFactory.CreateChannel();
+            Console.WriteLine(Description["name"] + " stub just started");
+            return true;
         }
 
         public void Die()
@@ -34,7 +40,6 @@ namespace Smarthouse.Modules.Terminal
             if (Dead != null)
                 Dead.Invoke(null, null);
         }
-
 
         public int ReadInt(string message, string errorMessage, ConsoleColor messageColor)
         {
@@ -48,7 +53,15 @@ namespace Smarthouse.Modules.Terminal
 
         public void WriteLine(string message, ConsoleColor messageColor)
         {
-            throw new NotImplementedException();
+            try
+            {
+                _transparentProxy.WriteLine(message, messageColor);
+            }
+            catch (Exception ex)
+            {
+                Die();
+                throw new Exception("Connection problems");
+            }
         }
 
     }

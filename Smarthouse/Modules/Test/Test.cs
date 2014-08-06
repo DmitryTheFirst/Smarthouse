@@ -4,6 +4,7 @@ using System.Net;
 using System.ServiceModel;
 using System.Threading;
 using System.Xml;
+using Smarthouse.Modules.Hardware.Led;
 
 namespace Smarthouse.Modules.Test
 {
@@ -54,14 +55,18 @@ namespace Smarthouse.Modules.Test
         }
         private void Thread1()
         {
+            bool b = true;
             do
             {
-                var otherTest = (ITest)ModuleManager.FindModule("name", "TestPi");
+                var otherTest = (ILed)ModuleManager.FindModule("name", "Led1");
+
                 if (otherTest != null)
                 {
                     try
                     {
-                        Console.WriteLine(otherTest.GetRandomNum(0, 1000));
+                        otherTest.SetState(b);
+                        b = !b;
+                        Console.WriteLine(b);
                     }
                     catch (Exception ex)
                     {
@@ -70,9 +75,9 @@ namespace Smarthouse.Modules.Test
                 }
                 else
                 {
-                    Console.WriteLine("Module TestPi not found");
+                    Console.WriteLine("Module Led1 not found");
                 }
-                Thread.Sleep(10);
+                Thread.Sleep(1000);
             } while (true);
         }
 

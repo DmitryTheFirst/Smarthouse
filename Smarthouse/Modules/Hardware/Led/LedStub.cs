@@ -41,7 +41,16 @@ namespace Smarthouse.Modules.Hardware.Led
 
         public void SetState(bool state)
         {
-            _transparentProxy.SetState(state);
+            try
+            {
+                _transparentProxy.SetState(state);
+            }
+            catch (Exception ex)
+            {
+                Die();
+                throw new Exception("Connection problems");
+            }
+
         }
     }
 }
