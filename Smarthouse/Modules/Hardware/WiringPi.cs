@@ -104,10 +104,10 @@ namespace Smarthouse.Modules.Hardware
             SOFT_TONE_OUTPUT,
             PWM_TONE_OUTPUT
         }
-        public enum PinSignal
+        public enum PinSignal    //0-HIGH, 1- LOW. I don't know why it works like this. In WiringPI there is reversed enum. 
         {
-            LOW,
-            HIGH
+            HIGH,
+            LOW
         }
 
         public enum PullResistor

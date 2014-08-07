@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.ServiceModel;
+using System.Threading;
 using System.Xml;
 using Smarthouse.Modules.Hardware.Button;
 using Smarthouse.Modules.Terminal;
@@ -35,6 +36,7 @@ namespace Smarthouse.Modules.Hardware.Led
         public bool Start()
         {
             //load state from cfg?
+            WiringPi.digitalWrite(_wiringPiPin, (int)WiringPi.PinSignal.LOW);
             return true;
         }
 
