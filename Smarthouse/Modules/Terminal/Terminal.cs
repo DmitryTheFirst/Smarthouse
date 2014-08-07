@@ -14,17 +14,15 @@ namespace Smarthouse.Modules.Terminal
 
         private string loginMessage = "Welcome, motherfucker! Who the fuck are you?";
         private byte tryesToLogin = 3;
-        public ServiceHost WcfHost { get; set; }
 
         public event EventHandler Dead;
         public ModuleManager ModuleManager { get; set; }
-        public Type StubClass { get; set; }
         public Dictionary<string, string> Description { get; set; }
         public XmlNode Cfg { get; set; }
 
         public bool Init()
         {
-            bool success = true;
+            var success = true;
             //creating thread
 
             return success;
@@ -42,6 +40,8 @@ namespace Smarthouse.Modules.Terminal
                 Dead.Invoke(null, null);
         }
 
+        public ServiceHost WcfHost { get; set; }
+        public Type StubClass { get; set; }
 
         public int ReadInt(string message, string errorMessage, ConsoleColor messageColor)
         {

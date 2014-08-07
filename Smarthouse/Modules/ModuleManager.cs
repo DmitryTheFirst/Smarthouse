@@ -420,10 +420,23 @@ namespace Smarthouse.Modules
                 module.Die();
             }
         }
+
+
         public IModule FindModule(string key, string value)
         {
             return _modules.FirstOrDefault(a => a.Description.ContainsKey(key) && a.Description[key] == value);
         }
+
+        public List<T> GetAllModulesByType<T>()
+        {
+            List<T> reslist = new List<T>();
+            reslist.AddRange(_modules.
+                Where(a => a.GetType().GetInterface(typeof(T).FullName) != null ||
+                    string.Equals(a.GetType().BaseType.FullName, (typeof(T).FullName))).
+                    Select(b => (T)b));
+            return reslist;
+        }
+
         public bool ContainsModule(string moduleName)
         {
             return _modules.Any(a => a.Description["name"] == moduleName);

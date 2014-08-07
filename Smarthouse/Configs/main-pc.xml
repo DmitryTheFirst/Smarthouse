@@ -8,7 +8,25 @@
     </smarthouses>
   </moduleManager>
 
+ 
+
   <plugins>
+
+    <plugin className="Smarthouse.Modules.Hardware.Led.Led"
+           stubClassName="Smarthouse.Modules.Hardware.Led.LedStub">
+      <description>
+        <desc name="name" value="Led1"/>
+      </description>
+      <moduleConfig>
+        <hardware pin="11"/>
+        <events>
+          <event caller="btn1" method="btn1Clicked"/>
+          <event caller="btn2" method="btn2Clicked"/>
+          <event caller="btn3" method="btn3Clicked"/>
+        </events>
+      </moduleConfig>
+    </plugin>
+
     <plugin className="Smarthouse.Modules.Test.Test"
                 stubClassName="Smarthouse.Modules.Test.TestStub">
       <description>

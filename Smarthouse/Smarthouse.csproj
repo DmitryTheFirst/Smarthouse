@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Smarthouse</RootNamespace>
     <AssemblyName>Smarthouse</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <TargetFrameworkProfile />
@@ -50,6 +50,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Modules\AccountManager\AccountManager.cs" />
+    <Compile Include="Modules\Hardware\Button\Button.cs" />
+    <Compile Include="Modules\BoolCallable.cs" />
+    <Compile Include="Modules\Hardware\Button\ButtonStub.cs" />
+    <Compile Include="Modules\Hardware\Button\IButton.cs" />
     <Compile Include="Modules\Hardware\WiringPi.cs" />
     <Compile Include="Modules\IModule.cs" />
     <Compile Include="Modules\IRealModule.cs" />

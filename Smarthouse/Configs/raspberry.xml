@@ -17,14 +17,60 @@
         <netCfg ip="192.168.0.141"/>
       </moduleConfig>
     </plugin>-->
+
     <plugin className="Smarthouse.Modules.Hardware.Led.Led"
-                stubClassName="Smarthouse.Modules.Hardware.Led.LedStub">
+             stubClassName="Smarthouse.Modules.Hardware.Led.LedStub">
       <description>
         <desc name="name" value="Led1"/>
       </description>
       <moduleConfig>
         <hardware pin="11"/>
+        <events>
+          <event caller="btn1" method="btn1Clicked"/>
+          <event caller="btn2" method="btn2Clicked"/>
+          <event caller="btn3" method="btn3Clicked"/>
+        </events>
       </moduleConfig>
     </plugin>
+
+    <plugin className="Smarthouse.Modules.Hardware.Button.Button"
+                stubClassName="Smarthouse.Modules.Hardware.Button.ButtonStub">
+      <description>
+        <desc name="name" value="btn1"/>
+      </description>
+      <moduleConfig>
+        <hardware
+          pin="10"
+          betweenIterationsMilliseconds="100"
+          />
+      </moduleConfig>
+    </plugin>
+
+    <plugin className="Smarthouse.Modules.Hardware.Button.Button"
+                    stubClassName="Smarthouse.Modules.Hardware.Button.ButtonStub">
+      <description>
+        <desc name="name" value="btn2"/>
+      </description>
+      <moduleConfig>
+        <hardware
+          pin="6"
+          betweenIterationsMilliseconds="100"
+          />
+      </moduleConfig>
+    </plugin>
+
+    <plugin className="Smarthouse.Modules.Hardware.Button.Button"
+                   stubClassName="Smarthouse.Modules.Hardware.Button.ButtonStub">
+      <description>
+        <desc name="name" value="btn3"/>
+      </description>
+      <moduleConfig>
+        <hardware
+          pin="5"
+          betweenIterationsMilliseconds="100"
+          />
+      </moduleConfig>
+    </plugin>
+
   </plugins>
 </config>

@@ -5,6 +5,7 @@ using System.ServiceModel;
 using System.Threading;
 using System.Xml;
 using Smarthouse.Modules.Hardware.Led;
+using Smarthouse.Modules.Terminal;
 
 namespace Smarthouse.Modules.Test
 {
@@ -39,7 +40,6 @@ namespace Smarthouse.Modules.Test
         public bool Start()
         {
             Thread t1 = new Thread(Thread1);
-
             //NetworkMain = (TcpNetwork)Smarthouse.moduleManager.FindModule("name", "NetworkMain");
             //NetworkAdditional1 = (TcpNetwork)Smarthouse.moduleManager.FindModule("name", "NetworkAdditional1");
             //NetworkAdditional2 = (TcpNetwork)Smarthouse.moduleManager.FindModule("name", "NetworkAdditional2");
@@ -47,7 +47,11 @@ namespace Smarthouse.Modules.Test
             // Thread t1 = new Thread(Thread1);
             //Thread t2 = new Thread(Thread2);
             //Thread t3 = new Thread(Thread3);
-
+            var subscribers = ModuleManager.GetAllModulesByType<BoolCallable>();
+            foreach (var subscriber in subscribers)
+            {
+                subscriber.CallEvent("btn1", true);
+            }
             t1.Start();
             //t2.Start();
             //t3.Start();
