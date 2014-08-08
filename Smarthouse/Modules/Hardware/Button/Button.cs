@@ -26,7 +26,7 @@ namespace Smarthouse.Modules.Hardware.Button
             _myName = Description["name"];
             WiringPi.Setup();
             WiringPi.pinMode(wiringPiPin, (int)WiringPi.PinMode.INPUT);
-            WiringPi.pullUpDnControl(wiringPiPin, (int)WiringPi.PullResistor.PUD_UP);
+            WiringPi.pullUpDnControl(wiringPiPin, (int)WiringPi.PullResistor.PUD_DOWN);
             btnListener = new Thread(BtnListen);
             return true;
         }
@@ -40,7 +40,7 @@ namespace Smarthouse.Modules.Hardware.Button
         {
             do
             {
-                bool signal = WiringPi.digitalRead(wiringPiPin) == 0;
+                bool signal = WiringPi.digitalRead(wiringPiPin) == 1;
                 if (signal != _state)
                 {
                     _state = signal;

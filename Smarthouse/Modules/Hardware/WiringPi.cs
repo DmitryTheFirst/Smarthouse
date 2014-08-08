@@ -104,7 +104,7 @@ namespace Smarthouse.Modules.Hardware
             SOFT_TONE_OUTPUT,
             PWM_TONE_OUTPUT
         }
-        public enum PinSignal    //0-HIGH, 1- LOW. I don't know why it works like this. In WiringPI there is reversed enum. 
+        public enum PinSignal //different order than in C library. In C Low ==0, High == 1
         {
             HIGH,
             LOW

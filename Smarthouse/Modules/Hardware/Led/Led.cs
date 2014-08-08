@@ -17,7 +17,6 @@ namespace Smarthouse.Modules.Hardware.Led
         public void SetState(bool state)
         {
             WiringPi.digitalWrite(_wiringPiPin, state ? (int)WiringPi.PinSignal.HIGH : (int)WiringPi.PinSignal.LOW);
-            Console.WriteLine("Set state " + state);
         }
 
         public Dictionary<string, string> Description { get; set; }
@@ -36,7 +35,9 @@ namespace Smarthouse.Modules.Hardware.Led
         public bool Start()
         {
             //load state from cfg?
-            WiringPi.digitalWrite(_wiringPiPin, (int)WiringPi.PinSignal.LOW);
+            WiringPi.digitalWrite(_wiringPiPin, (int)WiringPi.PinSignal.LOW); Thread.Sleep(50);
+            WiringPi.digitalWrite(_wiringPiPin, (int)WiringPi.PinSignal.HIGH); Thread.Sleep(50);
+            WiringPi.digitalWrite(_wiringPiPin, (int)WiringPi.PinSignal.LOW); Thread.Sleep(50);
             return true;
         }
 
@@ -57,18 +58,14 @@ namespace Smarthouse.Modules.Hardware.Led
         {
             Console.WriteLine("Button 1 said " + state);
             if (state)
-            {
                 WiringPi.digitalWrite(_wiringPiPin, (int)WiringPi.PinSignal.HIGH);
-            }
 
         }
         private void btn2Clicked(bool state)
         {
             Console.WriteLine("Button 2 said " + state);
             if (state)
-            {
                 WiringPi.digitalWrite(_wiringPiPin, (int)WiringPi.PinSignal.LOW);
-            }
 
         }
         private void btn3Clicked(bool state)
