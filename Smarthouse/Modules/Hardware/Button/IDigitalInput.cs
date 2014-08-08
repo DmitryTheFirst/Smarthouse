@@ -3,7 +3,7 @@
 namespace Smarthouse.Modules.Hardware.Button
 {
     [ServiceContract]
-    interface IButton
+    interface IDigitalInput
     {
         [OperationContract]
         bool GetState();

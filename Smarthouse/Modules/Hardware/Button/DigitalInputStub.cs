@@ -5,7 +5,7 @@ using System.Net;
 namespace Smarthouse.Modules.Hardware.Button
 {
 
-    class ButtonStub : IStubModule, IButton
+    class DigitalInputStub : IStubModule, IDigitalInput
     {
         public Dictionary<string, string> Description { get; set; }
         public bool Init()

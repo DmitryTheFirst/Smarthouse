@@ -58,19 +58,20 @@ namespace Smarthouse.Modules.Hardware.Led
         {
             Console.WriteLine("Button 1 said " + state);
             if (state)
-                WiringPi.digitalWrite(_wiringPiPin, (int)WiringPi.PinSignal.HIGH);
+                SetState(true);
 
         }
         private void btn2Clicked(bool state)
         {
             Console.WriteLine("Button 2 said " + state);
             if (state)
-                WiringPi.digitalWrite(_wiringPiPin, (int)WiringPi.PinSignal.LOW);
+                SetState(false);
 
         }
         private void btn3Clicked(bool state)
         {
             Console.WriteLine("Button 3 said " + state);
+            SetState(state);
         }
     }
 }

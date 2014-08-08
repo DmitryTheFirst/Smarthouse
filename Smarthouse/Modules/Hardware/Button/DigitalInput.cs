@@ -9,7 +9,7 @@ using System.Xml;
 namespace Smarthouse.Modules.Hardware.Button
 {
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single)]
-    class Button : IRealModule, IButton, IRemote
+    class DigitalInput : IRealModule, IDigitalInput, IRemote
     {
         public Dictionary<string, string> Description { get; set; }
         private byte wiringPiPin;
